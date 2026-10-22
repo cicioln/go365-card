@@ -27,10 +27,10 @@ COPY --chown=node:node package.json ./
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --chown=node:node server ./server
-# 后端复用的前端类型、演示数据与价格计算
+# 后端复用的前端类型、演示数据与工具函数（价格计算、SEO 等）
 COPY --chown=node:node src/data/mock.ts ./src/data/mock.ts
 COPY --chown=node:node src/types.ts ./src/types.ts
-COPY --chown=node:node src/utils/pricing.ts ./src/utils/pricing.ts
+COPY --chown=node:node src/utils ./src/utils
 # 数据目录（挂载为卷），以非 root 用户运行
 COPY --from=deps --chown=node:node /out/data ./data
 USER node
