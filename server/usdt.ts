@@ -50,20 +50,25 @@ export function checkAddress(chain: Chain, address: string) {
   return address
 }
 
-/** 同一地址最多同时有 100 笔未支付订单（尾数 0.0000–0.0099） */
-const SLOTS = 100
+/** 尾数可选范围 0.0000–0.0999 USDT：同一地址、同一价位最多同时占用 1000 个金额 */
+const SLOTS = 1000
+
+/** 金额冷却期：订单关闭或支付后，它的金额在这段时间内不分配给新订单，防止买家迟到的转账被记到别人的订单上 */
+const REUSE_COOLDOWN_MS = 24 * 3600_000
 
 /**
- * 计算订单应付的 USDT 金额：按汇率换算并保留两位小数，再加上 0.0001 级别的尾数避开其它未支付订单。
- * 必须在创建订单的事务内调用。
+ * 计算订单应付的 USDT 金额：按汇率换算并保留两位小数，再加上 0.0001 级别的尾数，
+ * 避开同一地址上未支付的订单和冷却期内的订单。
+ * 必须在创建订单的事务内调用（BEGIN IMMEDIATE 串行执行，并发下单不会分到同一金额）。
  */
 export function allocateUnits(chain: Chain, address: string, amount: number, rate: number) {
   // 先四舍五入到 6 位消除浮点误差，再向上取整到 0.01 USDT（= 100 个单位）
   const base = Math.ceil(Math.round((amount / rate) * 1e6) / 1e4) * 100
   if (base <= 0) fail('订单金额过小')
   const taken = new Set(all<{ pay_units: number }>(
-    "SELECT pay_units FROM orders WHERE status = 'pending' AND pay_chain = ? AND pay_address = ? AND pay_units BETWEEN ? AND ?",
-    chain, address, base, base + SLOTS - 1,
+    `SELECT pay_units FROM orders WHERE pay_chain = ? AND pay_address = ? AND pay_units BETWEEN ? AND ?
+       AND (status = 'pending' OR created_at > ?)`,
+    chain, address, base, base + SLOTS - 1, new Date(Date.now() - REUSE_COOLDOWN_MS).toISOString(),
   ).map((r) => r.pay_units))
   for (let k = 0; k < SLOTS; k++) if (!taken.has(base + k)) return base + k
   fail('当前待支付订单过多，请稍后再试', 503)
