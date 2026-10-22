@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useSiteStore } from '../stores/site'
 
 defineProps<{ page: 'about' | 'privacy' | 'terms' | '404' }>()
 const { t } = useI18n()
+const db = useSiteStore()
 </script>
 
 <template>
@@ -14,7 +16,7 @@ const { t } = useI18n()
     </div>
     <div v-else class="card p-8">
       <h1 class="text-3xl font-bold">{{ page === 'about' ? t('about.title') : t(`legal.${page}`) }}</h1>
-      <p class="mt-6 leading-relaxed text-zinc-600 dark:text-zinc-300">{{ page === 'about' ? t('about.body') : t('legal.body') }}</p>
+      <p class="mt-6 leading-relaxed text-zinc-600 dark:text-zinc-300">{{ page === 'about' ? t('about.body', { site: db.site.siteName }) : t('legal.body') }}</p>
     </div>
   </div>
 </template>

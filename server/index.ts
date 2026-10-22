@@ -94,6 +94,7 @@ if (existsSync(DIST)) {
   }))
   // 首屏就输出后台设置的标题、描述、关键词和标签图标：搜索引擎不执行 JS 也能拿到，且不会先闪默认图标
   const esc = (s: string) => s.replace(/[&"<>]/g, (ch) => `&#${ch.charCodeAt(0)};`)
+  const LT_ESCAPE = String.fromCharCode(92) + 'u003c'
   const [head, rest] = indexHtml.split('</head>')
   const baseHead = head
     .replace(/\s*<title>[\s\S]*?<\/title>/, '')
@@ -132,6 +133,9 @@ if (existsSync(DIST)) {
       `<meta property="og:description" content="${esc(meta.description)}" />`,
       `<meta property="og:type" content="${detail ? 'article' : 'website'}" />`,
       `<link rel="icon" href="${esc(icon)}" />`,
+      // 站点设置直接写进页面，前端启动时就有正确的名称和 Logo，不必等接口返回（避免闪一下默认名称）
+      // JSON 里的 < 转义成 unicode 形式，防止站点名称中的 </script> 提前结束脚本
+      `<script>window.__SITE__=${JSON.stringify(site).replace(/</g, LT_ESCAPE)}</script>`,
     ].filter(Boolean)
     return c.html(`${baseHead}\n    ${tags.join('\n    ')}\n  </head>${rest}`)
   }
