@@ -12,6 +12,12 @@ docker compose up -d
 docker compose logs      # 查看安装码
 ```
 
+Windows PowerShell 里的 `curl` 是 `Invoke-WebRequest` 的别名，参数不同，下载这一步改用：
+
+```powershell
+curl.exe -O https://raw.githubusercontent.com/cicioln/go365-card/main/docker-compose.yml
+```
+
 1. 浏览器打开 `http://服务器IP:3000/admin`，输入日志中的安装码，设置管理员账号。
 2. 进入「支付渠道」，填写易支付的网关地址、商户号、密钥，确认站点地址，切换为易支付。
 3. 在「商品管理」把演示卡密（`DEMO-` 开头）换成真实卡密。
