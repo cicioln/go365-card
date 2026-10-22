@@ -1,7 +1,7 @@
 import { DatabaseSync, type StatementSync } from 'node:sqlite'
 import { randomBytes } from 'node:crypto'
 import { resolve } from 'node:path'
-import { DATA_DIR } from './config.ts'
+import { DATA_DIR, MODE } from './config.ts'
 import * as seed from '../src/data/mock.ts'
 import type { Category, PaymentChannel, Post, Product, SiteConfig } from '../src/data/mock.ts'
 
@@ -187,11 +187,15 @@ export const setSite = (site: SiteConfig) => setSetting('site', site)
 const CODE = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 export const randomCode = (n: number) => Array.from(randomBytes(n), (b) => CODE[b % CODE.length]).join('')
 
-/** 首次启动写入演示目录；演示卡密以 DEMO- 开头，上线前需在后台替换（环境变量指定 epay 时不生成） */
+/**
+ * 开发模式首次启动写入演示目录；演示卡密以 DEMO- 开头（环境变量指定 epay 时不生成）。
+ * 只写入一次：之后在后台删光商品也不会重新出现。生产模式不写入任何数据。
+ */
 function seedCatalog() {
-  if (one('SELECT 1 FROM categories LIMIT 1')) return
+  if (MODE !== 'dev' || getSetting('seeded', false) || one('SELECT 1 FROM categories LIMIT 1')) return
   const now = new Date().toISOString()
   tx(() => {
+    setSetting('seeded', true)
     setSite(seed.siteConfig)
     seed.categories.forEach((c, i) =>
       run('INSERT INTO categories (id, slug, name, glyph, color, sort) VALUES (?, ?, ?, ?, ?, ?)', c.id, c.slug, c.name, c.glyph, c.color, i))

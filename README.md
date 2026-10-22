@@ -21,7 +21,7 @@ curl.exe -O https://raw.githubusercontent.com/cicioln/go365-card/main/docker-com
 1. 浏览器打开 `http://服务器IP:3000/admin`，输入日志中的安装码，设置管理员账号。
 2. 进入「支付渠道」，填写易支付的网关地址、商户号、密钥，确认站点地址，切换为易支付。
    只收 USDT 的话可以不接易支付：编辑 USDT 渠道，选择收款链（BSC / TRON / Ethereum / Polygon），填写收款地址和汇率。买家在订单页扫码，按系统给出的唯一金额（精确到 4 位小数）转账，服务端每 20 秒查询一次链上记录，到账后自动发货。链上查询默认使用公共节点，可用 `USDT_RPC_BSC` 等环境变量换成自己的节点，TRON 可设置 `TRONGRID_API_KEY`。
-3. 在「商品管理」把演示卡密（`DEMO-` 开头）换成真实卡密。
+3. 在「商品分类」「商品管理」添加分类、商品和卡密。Docker 默认是生产模式，数据库初始为空，没有演示数据。
 
 不需要 `.env`。数据保存在名为 `shop-data` 的 Docker 卷中，更新镜像（`docker compose pull && docker compose up -d`）不会丢失。
 
@@ -39,7 +39,7 @@ curl.exe -O https://raw.githubusercontent.com/cicioln/go365-card/main/docker-com
 npm install
 
 # 开发：两个终端分别运行
-npm run dev:server   # 后端 http://localhost:3000
+npm run dev:server   # 后端 http://localhost:3000（开发模式，首次启动写入演示数据）
 npm run dev          # 前端 http://localhost:5173，/api 自动转发到后端
 
 # 生产
@@ -47,10 +47,19 @@ npm run build
 npm start            # 同一个端口提供页面和接口；使用 .env 时改为 npm run start:env
 ```
 
+### 运行模式
+
+| 模式 | 启动方式 | 数据 |
+| --- | --- | --- |
+| 开发 | `npm run dev:server`，或 `APP_MODE=dev` | 首次启动写入演示分类、商品、文章、支付渠道和 `DEMO-` 测试卡密，之后的修改都会保留 |
+| 生产 | `npm start`、Docker（默认），或 `APP_MODE=production` | 数据库全空，全部在后台添加 |
+
+模式只决定空数据库是否写入演示数据，不会删除已有数据。开发和生产用不同的数据目录（`DATA_DIR`，默认 `./data`）就能互不影响；要把已有演示数据的 Docker 部署清空，需要删除数据卷后重启（会丢失全部数据）。
+
 ## 上线前必做
 
 1. 后台「支付渠道」切换为易支付。模拟支付下任何拿到订单链接的人都能"支付"，后台顶部会一直显示警告。
-2. 把自动发货商品的演示卡密换成真实卡密。
+2. 确认以生产模式运行；如果数据库来自开发模式，删除演示商品和 `DEMO-` 卡密。
 3. 配置 HTTPS（Cookie 会自动只走 HTTPS）；在 Nginx / Caddy 后部署时设置 `TRUST_PROXY=1`。
 4. 定期备份数据卷（数据库、上传图片、签名密钥）。丢失签名密钥会导致已发出的订单链接和游客查单密码失效。
 

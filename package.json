@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "node --disable-warning=ExperimentalWarning --experimental-strip-types --watch server/index.ts",
+    "dev:server": "node --disable-warning=ExperimentalWarning --experimental-strip-types --watch server/index.ts --dev",
     "build": "vue-tsc -b && tsc -p tsconfig.server.json && vite build",
     "start": "node --disable-warning=ExperimentalWarning --experimental-strip-types server/index.ts",
     "preview": "vite preview",

@@ -6,7 +6,7 @@ import { bodyLimit } from 'hono/body-limit'
 import { secureHeaders } from 'hono/secure-headers'
 import { existsSync, readFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
-import { config, ROOT, UPLOAD_DIR } from './config.ts'
+import { config, MODE, ROOT, UPLOAD_DIR } from './config.ts'
 import { prune as pruneCaptcha } from './captcha.ts'
 import { closeExpired } from './orders.ts'
 import { db } from './db.ts'
@@ -126,6 +126,6 @@ for (const sig of ['SIGTERM', 'SIGINT'] as const)
 
 serve({ fetch: app.fetch, port: config.port }, () => {
   const pay = payConfig()
-  console.log(`[server] http://localhost:${config.port}  支付模式：${pay.provider === 'epay' ? '易支付' : '模拟支付（仅测试用，请在后台配置）'}${existsSync(DIST) ? '' : '（未找到 dist，只提供 API）'}`)
+  console.log(`[server] http://localhost:${config.port}  运行模式：${MODE === 'dev' ? '开发（含演示数据）' : '生产'}  支付模式：${pay.provider === 'epay' ? '易支付' : '模拟支付（仅测试用，请在后台配置）'}${existsSync(DIST) ? '' : '（未找到 dist，只提供 API）'}`)
   initSetup()
 })

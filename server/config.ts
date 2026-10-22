@@ -22,6 +22,13 @@ function loadSecret() {
   return secret
 }
 
+/**
+ * 运行模式：dev 首次启动写入演示商品、分类、文章、支付渠道；production 数据库保持全空，全部在后台添加。
+ * APP_MODE 优先；未设置时 `npm run dev:server`（带 --dev 参数）为 dev，其余（npm start、Docker）为 production。
+ */
+export const MODE: 'dev' | 'production' =
+  env.APP_MODE === 'dev' || env.APP_MODE === 'production' ? env.APP_MODE : process.argv.includes('--dev') ? 'dev' : 'production'
+
 export const config = {
   port: Number(env.PORT) || 3000,
   secret: loadSecret(),

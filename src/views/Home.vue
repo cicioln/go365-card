@@ -120,5 +120,6 @@ const pill =
         <span class="mt-4 block text-sm text-brand">{{ t('home.readMore') }}</span>
       </RouterLink>
     </div>
+    <p v-if="!loading && !posts.length" class="py-10 text-center text-zinc-500">{{ t('posts.empty') }}</p>
   </section>
 </template>
