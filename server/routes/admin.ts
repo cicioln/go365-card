@@ -158,7 +158,7 @@ function parseProduct(b: Record<string, unknown>) {
   let cards: string[] = []
   if (fulfillment === 'auto') {
     if (!Array.isArray(b.cards) || b.cards.length > 20000) fail('卡密格式错误')
-    cards = b.cards.map((x) => str(x, '卡密', 1000))
+    cards = b.cards.map((x) => str(x, '卡密', 5000))
     if (new Set(cards).size !== cards.length) fail('卡密中有重复')
   }
   return {
@@ -365,7 +365,7 @@ admin.post('/orders/:no/mark-paid', (c) => {
 admin.post('/orders/:no/deliver', async (c) => {
   const b = await body(c)
   if (!Array.isArray(b.cards)) fail('请填写发货内容')
-  const cards = b.cards.map((x) => str(x, '发货内容', 2000)).filter(Boolean)
+  const cards = b.cards.map((x) => str(x, '发货内容', 5000)).filter(Boolean)
   deliverLine(c.req.param('no'), num(b.lineId, '商品行', 1, 1e12, true), cards)
   return c.json(toOrder(findOrder(c.req.param('no'))!, true))
 })

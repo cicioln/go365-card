@@ -2,17 +2,16 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { Copy, RefreshCw } from 'lucide-vue-next'
+import { RefreshCw } from 'lucide-vue-next'
 import { getOrder, startPay } from '../api'
 import type { Order } from '../types'
-import { useUiStore } from '../stores/ui'
 import { money } from '../utils/money'
 import { errorText } from '../http'
 import UsdtPay from '../components/UsdtPay.vue'
+import CardList from '../components/CardList.vue'
 
 const { t } = useI18n()
 const route = useRoute()
-const ui = useUiStore()
 const order = ref<Order | null>(null)
 const loading = ref(true)
 const loadError = ref('')
@@ -56,16 +55,7 @@ async function pay() {
   }
 }
 
-async function copy(text: string) {
-  try {
-    await navigator.clipboard.writeText(text)
-    ui.notify(t('order.copied'))
-  } catch {
-    /* 剪贴板不可用时忽略 */
-  }
-}
-
-const cards = computed(() => order.value?.lines.flatMap((l) => l.cards) ?? [])
+const hasCards = computed(() => !!order.value?.lines.some((l) => l.cards.length))
 
 const statusClass = {
   pending: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15',
@@ -113,16 +103,7 @@ const statusClass = {
       </p>
       <p v-else-if="order.status === 'closed'" class="card mt-4 p-5 text-sm text-zinc-500">{{ t('order.closedHint') }}</p>
 
-      <div v-if="cards.length" class="card mt-4 p-5">
-        <h2 class="mb-1 font-bold">{{ t('order.cards') }}</h2>
-        <p class="mb-3 text-xs text-zinc-500">{{ t('order.saveHint') }}</p>
-        <ul class="grid gap-2">
-          <li v-for="(c, i) in cards" :key="i" class="flex items-center justify-between gap-3 rounded-xl bg-zinc-50 px-4 py-2.5 font-mono text-sm break-all dark:bg-zinc-800">
-            {{ c }}
-            <button class="flex shrink-0 items-center gap-1 text-brand" :aria-label="t('order.copy')" @click="copy(c)"><Copy class="h-4 w-4" /></button>
-          </li>
-        </ul>
-      </div>
+      <CardList v-if="hasCards" :order="order" />
     </template>
   </div>
 </template>

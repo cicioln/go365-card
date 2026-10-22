@@ -7,6 +7,7 @@ import { useUiStore } from '../../stores/ui'
 import { money, statusClass, statusText } from '../../components/admin/status'
 import AdminModal from '../../components/admin/AdminModal.vue'
 import { errorText } from '../../http'
+import { splitCards } from '../../utils/cards'
 
 const ui = useUiStore()
 const list = ref<Order[]>([])
@@ -47,7 +48,14 @@ watch(keyword, () => {
   timer = window.setTimeout(load, 300)
 })
 
-const parse = (s = '') => s.split('\n').map((x) => x.trim()).filter(Boolean)
+// 发货内容：只需 1 条时整段作为一条（可以多行）；多条时有空行就按空行分隔，否则每行一条
+const parse = (s = '', qty = 1) => {
+  if (qty === 1) {
+    const one = splitCards(s, 'line').join('\n')
+    return one ? [one] : []
+  }
+  return splitCards(s, /\n[ \t]*\n/.test(s.trim()) ? 'blank' : 'line')
+}
 
 async function view(o: Order) {
   cardsInput.value = {}
@@ -78,7 +86,7 @@ function markPaid() {
 }
 
 const deliver = (lineId: number) =>
-  act(() => adminApi.deliver(viewing.value!.orderNo, lineId, parse(cardsInput.value[lineId])), '已发货')
+  act(() => adminApi.deliver(viewing.value!.orderNo, lineId, parse(cardsInput.value[lineId], viewing.value!.lines.find((l) => l.id === lineId)?.qty)), '已发货')
 
 function closeOrder(o: Order) {
   if (!confirm(`关闭订单 ${o.orderNo}？锁定的库存会被释放。`)) return
@@ -189,14 +197,14 @@ function exportCsv() {
           <span class="shrink-0 font-semibold">{{ money(l.unit * l.qty) }}</span>
         </div>
         <ul v-if="l.cards.length" class="mt-2 grid gap-1.5 font-mono text-xs">
-          <li v-for="(c, j) in l.cards" :key="j" class="rounded-lg bg-zinc-50 px-3 py-2 break-all dark:bg-zinc-800">{{ c }}</li>
+          <li v-for="(c, j) in l.cards" :key="j" class="rounded-lg bg-zinc-50 px-3 py-2 whitespace-pre-wrap break-all dark:bg-zinc-800">{{ c }}</li>
         </ul>
         <form v-else-if="viewing.status === 'paid' && !l.delivered" class="mt-2" @submit.prevent="deliver(l.id)">
           <label class="label" :for="`o-cards-${l.id}`">
-            {{ l.fulfillment === 'auto' ? '卡密库存不足，请手动补发' : '人工发货' }}（每行一条，共需 {{ l.qty }} 条，当前 {{ parse(cardsInput[l.id]).length }} 条）
+            {{ l.fulfillment === 'auto' ? '卡密库存不足，请手动补发' : '人工发货' }}（{{ l.qty > 1 ? '多行卡密之间空一行，' : '' }}共需 {{ l.qty }} 条，当前 {{ parse(cardsInput[l.id], l.qty).length }} 条）
           </label>
           <textarea :id="`o-cards-${l.id}`" v-model="cardsInput[l.id]" rows="3" class="input font-mono text-xs" placeholder="卡密 / 账号密码 / 兑换链接" />
-          <div class="mt-2 flex justify-end"><button class="btn-primary py-2" :disabled="busy || parse(cardsInput[l.id]).length !== l.qty">确认发货</button></div>
+          <div class="mt-2 flex justify-end"><button class="btn-primary py-2" :disabled="busy || parse(cardsInput[l.id], l.qty).length !== l.qty">确认发货</button></div>
         </form>
       </li>
     </ul>

@@ -24,6 +24,7 @@ const zh = {
   order: {
     title: '订单详情', no: '订单号', status: '状态', pending: '待支付', paid: '已支付', delivered: '已发货', created: '下单时间',
     closed: '已关闭', payNow: '去支付', cards: '卡密', copy: '复制', copied: '已复制', notFound: '订单不存在',
+    copyAll: '复制全部', exportTxt: '导出 TXT', cardCount: '共 {n} 条', copyFail: '复制失败，请手动选择文本复制',
     payHint: '请在 {time} 前完成支付，超时订单将自动关闭', closedHint: '订单已超时关闭，库存已释放。如已付款请联系客服。',
     saveHint: '请妥善保存。凭此页面链接或「游客查单」可再次查看。',
     waitManual: '已支付，订单中含人工发货商品，客服处理后会在此显示发货内容，页面会自动刷新。',
@@ -76,6 +77,7 @@ const en: Messages = {
   order: {
     title: 'Order', no: 'Order No.', status: 'Status', pending: 'Unpaid', paid: 'Paid', delivered: 'Delivered', created: 'Created',
     closed: 'Closed', payNow: 'Pay now', cards: 'Cards', copy: 'Copy', copied: 'Copied', notFound: 'Order not found',
+    copyAll: 'Copy all', exportTxt: 'Export TXT', cardCount: '{n} total', copyFail: 'Copy failed, please select the text manually',
     payHint: 'Please pay before {time}; unpaid orders close automatically', closedHint: 'This order timed out and was closed. Contact support if you already paid.',
     saveHint: 'Keep these safe. You can view them again via this page link or Order Lookup.',
     waitManual: 'Paid. This order contains manually delivered items; delivery details will appear here once processed.',

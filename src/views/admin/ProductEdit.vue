@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Plus, Trash2, ArrowLeft } from 'lucide-vue-next'
+import { Plus, Trash2, ArrowLeft, Upload } from 'lucide-vue-next'
 import type { Category, Product } from '../../data/mock'
 import { adminApi } from '../../adminApi'
 import { useUiStore } from '../../stores/ui'
@@ -9,6 +9,12 @@ import ProductCover from '../../components/ProductCover.vue'
 import ImageUpload from '../../components/admin/ImageUpload.vue'
 import RichEditor from '../../components/admin/RichEditor.vue'
 import { errorText } from '../../http'
+import { guessSplit, joinCards, splitCards, type CardSplit } from '../../utils/cards'
+
+const SPLITS: { value: CardSplit; label: string }[] = [
+  { value: 'line', label: '每行一条' },
+  { value: 'blank', label: '空行分隔（多行卡密）' },
+]
 
 const ui = useUiStore()
 const route = useRoute()
@@ -29,9 +35,33 @@ const loadError = ref('')
 const error = ref('')
 const busy = ref(false)
 
-// 自动发货的卡密库存：每行一条，库存数自动等于卡密条数
+// 自动发货的卡密库存：库存数自动等于卡密条数。多行卡密（账号 + 密码 + 辅助信息）用空行分隔
 const cardsText = ref('')
-const cardList = computed(() => cardsText.value.split('\n').map((s) => s.trim()).filter(Boolean))
+const splitMode = ref<CardSplit>('line')
+const cardList = computed(() => splitCards(cardsText.value, splitMode.value))
+const cardFile = ref<HTMLInputElement>()
+
+/** 切换分隔方式时按新格式重排文本，避免已录入的内容被拆错 */
+function setSplit(mode: CardSplit) {
+  if (mode === splitMode.value) return
+  const cur = cardList.value
+  splitMode.value = mode
+  cardsText.value = mode === 'line' ? cur.flatMap((c) => c.split('\n')).join('\n') : joinCards(cur, mode)
+}
+
+/** 从 .txt 导入，追加到现有卡密后面 */
+async function importCards(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) return (error.value = '文件不能超过 5MB')
+  const text = (await file.text()).replace(/^﻿/, '').trim()
+  if (!text) return
+  const sep = splitMode.value === 'line' ? '\n' : '\n\n'
+  cardsText.value = cardsText.value.trim() ? `${cardsText.value.trim()}${sep}${text}` : text
+  ui.notify(`已导入，当前共 ${cardList.value.length} 条`)
+}
 const dupCount = computed(() => cardList.value.length - new Set(cardList.value).size)
 const preview = computed(() =>
   form.value ? { ...form.value, cover: { ...form.value.cover, headline: form.value.cover.headline || form.value.title || '封面标题' } } : null,
@@ -46,7 +76,8 @@ onMounted(async () => {
       const p = await adminApi.product(Number(route.params.id))
       const { cards, reserved: r, soldCards: s, ...rest } = p
       form.value = rest
-      cardsText.value = cards.join('\n')
+      splitMode.value = guessSplit(cards)
+      cardsText.value = joinCards(cards, splitMode.value)
       reserved.value = r
       soldCards.value = s
     }
@@ -133,10 +164,36 @@ async function save() {
           <label class="flex items-center gap-2"><input v-model="form.recommended" type="checkbox" class="accent-brand" />首页推荐</label>
         </div>
         <div v-if="form.fulfillment === 'auto'">
-          <label class="label" for="p-cards">可售卡密（每行一条，支付成功后按顺序自动发出）</label>
-          <textarea id="p-cards" v-model="cardsText" rows="6" class="input font-mono text-xs" placeholder="XXXX-XXXX-XXXX-XXXX" />
+          <div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+            <label class="label !mb-0" for="p-cards">可售卡密（支付成功后按顺序自动发出）</label>
+            <div class="flex items-center gap-2">
+              <div role="radiogroup" aria-label="卡密分隔方式" class="flex rounded-lg bg-zinc-100 p-0.5 text-xs dark:bg-zinc-800">
+                <button
+                  v-for="m in SPLITS"
+                  :key="m.value"
+                  type="button"
+                  role="radio"
+                  :aria-checked="splitMode === m.value"
+                  class="rounded-md px-2.5 py-1 transition"
+                  :class="splitMode === m.value ? 'bg-white font-semibold shadow-sm dark:bg-zinc-700' : 'text-zinc-500'"
+                  @click="setSplit(m.value)"
+                >
+                  {{ m.label }}
+                </button>
+              </div>
+              <input ref="cardFile" type="file" accept=".txt,text/plain" class="sr-only" tabindex="-1" aria-hidden="true" @change="importCards" />
+              <button type="button" class="btn-ghost px-2.5 py-1 text-xs" @click="cardFile?.click()"><Upload class="h-3.5 w-3.5" />导入 TXT</button>
+            </div>
+          </div>
+          <textarea
+            id="p-cards"
+            v-model="cardsText"
+            :rows="splitMode === 'blank' ? 12 : 6"
+            class="input font-mono text-xs"
+            :placeholder="splitMode === 'line' ? 'XXXX-XXXX-XXXX-XXXX\nYYYY-YYYY-YYYY-YYYY' : 'Email : a@outlook.com\nPass : xxxx\n\nEmail : b@outlook.com\nPass : yyyy'"
+          />
           <p class="mt-1.5 text-xs" :class="dupCount ? 'text-red-500' : 'text-zinc-400'">
-            共 {{ cardList.length }} 条<template v-if="dupCount">，其中 {{ dupCount }} 条重复</template>
+            共 {{ cardList.length }} 条<template v-if="splitMode === 'blank'">（每条之间空一行，一条可以有多行）</template><template v-if="dupCount">，其中 {{ dupCount }} 条重复</template>
             <template v-if="reserved || soldCards">；另有 {{ reserved }} 条被未支付订单锁定、{{ soldCards }} 条已售出（不在此列表中）</template>
           </p>
         </div>
