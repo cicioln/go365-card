@@ -1,6 +1,7 @@
 import { config } from './config.ts'
 import { orderToken, queryHash } from './crypto.ts'
 import { all, one, run, tx, PRODUCT_SQL, toProduct, randomCode, type ChannelRow, type ProductRow } from './db.ts'
+import { allocateUnits, CHAINS, unitsToUsdt, USDT_GRACE_MS, type Chain } from './usdt.ts'
 import { fail, round2 } from './validate.ts'
 import { unitPriceFor } from '../src/utils/pricing.ts'
 import type { Order, OrderLine, OrderStatus } from '../src/types.ts'
@@ -9,6 +10,7 @@ export interface OrderRow {
   order_no: string; email: string; user_id: number | null; query_hash: string
   amount: number; fee: number; channel_id: number | null; channel_name: string; channel_type: string
   status: OrderStatus; trade_no: string | null; created_at: string; paid_at: string | null; expires_at: number
+  pay_chain: Chain | ''; pay_address: string; pay_units: number
 }
 
 interface LineRow {
@@ -29,6 +31,10 @@ export function toOrder(o: OrderRow, withCards: boolean): Order {
     orderNo: o.order_no, email: o.email, amount: o.amount, fee: o.fee, channel: o.channel_name, status: o.status,
     createdAt: o.created_at, paidAt: o.paid_at, expiresAt: new Date(o.expires_at).toISOString(),
     token: orderToken(o.order_no),
+    tradeNo: o.trade_no,
+    usdt: o.pay_chain
+      ? { chain: o.pay_chain, network: CHAINS[o.pay_chain].label, address: o.pay_address, amount: unitsToUsdt(o.pay_units) }
+      : null,
     lines: linesOf(o.order_no).map((l): OrderLine => {
       const cards = lineCards(l)
       return {
@@ -85,11 +91,17 @@ export function createOrder(input: {
     const amount = round2(subtotal + fee)
     if (amount < 0.01) fail('订单金额必须大于 0')
 
+    // 内置 USDT 收款：渠道配置了链和地址时，分配本单唯一的转账金额
+    const chain = ch.type === 'usdt' && ch.chain && ch.address ? (ch.chain as Chain) : ''
+    const units = chain ? allocateUnits(chain, ch.address, amount, ch.rate) : 0
+
     run(
-      `INSERT INTO orders (order_no, email, user_id, query_hash, amount, fee, channel_id, channel_name, channel_type, status, created_at, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+      `INSERT INTO orders (order_no, email, user_id, query_hash, amount, fee, channel_id, channel_name, channel_type, status, created_at, expires_at,
+         pay_chain, pay_address, pay_units)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
       orderNo, input.email, input.userId, queryHash(orderNo, input.queryPassword), amount, fee,
       ch.id, ch.name, ch.type, now.toISOString(), now.getTime() + config.orderTtlMinutes * 60_000,
+      chain, chain ? ch.address : '', units,
     )
     for (const l of lines)
       run('INSERT INTO order_lines (order_no, product_id, title, qty, unit, fulfillment) VALUES (?, ?, ?, ?, ?, ?)',
@@ -105,9 +117,11 @@ function release(orderNo: string) {
     if (l.fulfillment === 'manual') run('UPDATE products SET stock = stock + ? WHERE id = ?', l.qty, l.product_id)
 }
 
-/** 关闭超时未支付的订单 */
+/** 关闭超时未支付的订单；USDT 订单多等一段时间，留给链上确认 */
 export function closeExpired() {
-  const due = all<{ order_no: string }>("SELECT order_no FROM orders WHERE status = 'pending' AND expires_at < ?", Date.now())
+  const now = Date.now()
+  const due = all<{ order_no: string }>(
+    "SELECT order_no FROM orders WHERE status = 'pending' AND expires_at < (CASE WHEN pay_chain = '' THEN ? ELSE ? END)", now, now - USDT_GRACE_MS)
   for (const { order_no } of due)
     tx(() => {
       // 事务内再确认一次，避免与支付回调并发

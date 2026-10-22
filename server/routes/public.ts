@@ -19,7 +19,8 @@ const currentUser = (c: Parameters<typeof sessionOf>[0]) => {
 
 pub.get('/site', (c) => c.json(getSite()))
 pub.get('/categories', (c) => c.json(listCategories()))
-pub.get('/channels', (c) => c.json(listChannels().filter((ch) => ch.enabled)))
+// 收款地址只在订单里返回
+pub.get('/channels', (c) => c.json(listChannels().filter((ch) => ch.enabled).map(({ address: _a, rate: _r, ...ch }) => ch)))
 
 pub.get('/products', (c) => {
   const cat = Number(c.req.query('categoryId')) || 0

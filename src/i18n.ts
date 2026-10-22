@@ -25,6 +25,14 @@ const zh = {
     saveHint: '请妥善保存。凭此页面链接或「游客查单」可再次查看。',
     waitManual: '已支付，订单中含人工发货商品，客服处理后会在此显示发货内容，页面会自动刷新。',
   },
+  usdt: {
+    title: 'USDT 扫码支付', network: '网络', amount: '转账金额', address: '收款地址', qrAlt: '收款地址二维码',
+    copyAmount: '复制金额', copyAddress: '复制地址',
+    exact: '请转账精确金额 {amount} USDT（含小数），金额不符无法自动确认',
+    chainOnly: '只支持 {network} 网络的 USDT，转错网络资金无法找回',
+    deadline: '请在 {time} 前完成转账',
+    waiting: '等待链上到账，确认后自动发货，页面会自动刷新',
+  },
   guest: { title: '游客查单', sub: '输入订单号或邮箱与查单密码查询订单', keyword: '订单号 / 邮箱', password: '查单密码', query: '查询', none: '未找到匹配的订单' },
   auth: {
     login: '用户登录', loginSub: '欢迎回来，继续你的订单流程。', register: '注册账号', registerSub: '创建账号，管理你的订单。',
@@ -65,6 +73,14 @@ const en: Messages = {
     payHint: 'Please pay before {time}; unpaid orders close automatically', closedHint: 'This order timed out and was closed. Contact support if you already paid.',
     saveHint: 'Keep these safe. You can view them again via this page link or Order Lookup.',
     waitManual: 'Paid. This order contains manually delivered items; delivery details will appear here once processed.',
+  },
+  usdt: {
+    title: 'Pay with USDT', network: 'Network', amount: 'Amount', address: 'Address', qrAlt: 'Payment address QR code',
+    copyAmount: 'Copy amount', copyAddress: 'Copy address',
+    exact: 'Send exactly {amount} USDT including decimals, otherwise the payment cannot be matched automatically',
+    chainOnly: 'Only USDT on {network} is supported; funds sent on another network cannot be recovered',
+    deadline: 'Please complete the transfer before {time}',
+    waiting: 'Waiting for the on-chain transfer. Items are delivered automatically once confirmed.',
   },
   guest: { title: 'Order Lookup', sub: 'Enter order number or email and the lookup password', keyword: 'Order No. / Email', password: 'Password', query: 'Search', none: 'No matching orders' },
   auth: {

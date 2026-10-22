@@ -8,6 +8,7 @@ import type { Order } from '../types'
 import { useUiStore } from '../stores/ui'
 import { money } from '../utils/money'
 import { errorText } from '../http'
+import UsdtPay from '../components/UsdtPay.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -101,7 +102,8 @@ const statusClass = {
         </li>
       </ul>
 
-      <div v-if="order.status === 'pending'" class="card mt-4 flex flex-wrap items-center justify-between gap-4 p-5">
+      <UsdtPay v-if="order.status === 'pending' && order.usdt" :usdt="order.usdt" :expires-at="order.expiresAt" />
+      <div v-else-if="order.status === 'pending'" class="card mt-4 flex flex-wrap items-center justify-between gap-4 p-5">
         <p class="text-sm text-zinc-500">{{ t('order.payHint', { time: new Date(order.expiresAt).toLocaleTimeString() }) }}</p>
         <button class="btn-primary" :disabled="paying" @click="pay">{{ t('order.payNow') }}</button>
         <p v-if="payError" role="alert" class="w-full text-sm text-red-500">{{ payError }}</p>

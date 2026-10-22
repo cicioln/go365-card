@@ -36,7 +36,7 @@ const links = [
             </RouterLink>
           </nav>
         </div>
-        <div>
+        <div v-if="db.site.telegram">
           <h3 class="mb-4 text-lg font-bold">{{ t('footer.tg') }}</h3>
           <a :href="db.site.telegram" target="_blank" rel="noopener" class="btn-ghost px-4 py-3">
             <Send class="h-5 w-5 text-sky-500" />{{ t('footer.tg') }}

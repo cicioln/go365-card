@@ -29,6 +29,10 @@ export interface Order {
   lines: OrderLine[]
   /** 订单访问令牌，用于生成 /orders/:no?t= 链接 */
   token: string
+  /** 支付流水号：网关单号或链上交易哈希 */
+  tradeNo: string | null
+  /** 内置 USDT 收款信息：向 address 转账 amount USDT（金额精确到 4 位小数，用于识别订单） */
+  usdt: { chain: string; network: string; address: string; amount: string } | null
 }
 
 /** 后台商品详情：附带卡密库存 */

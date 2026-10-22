@@ -44,6 +44,11 @@ export interface PaymentChannel {
   type: 'alipay' | 'wechat' | 'usdt'
   feeRate: number
   enabled?: boolean
+  /** USDT 渠道：填写链与收款地址时使用内置收款（扫码转账、链上自动确认），留空走易支付 */
+  chain?: '' | 'bsc' | 'tron' | 'eth' | 'polygon'
+  address?: string
+  /** 汇率：1 USDT = rate 站点货币 */
+  rate?: number
 }
 
 export interface SiteConfig {
@@ -56,7 +61,8 @@ export interface SiteConfig {
 export const siteConfig: SiteConfig = {
   siteName: 'Go365 Card',
   description: 'Go365-AI之家',
-  telegram: 'https://t.me/',
+  // 留空时前台不显示 TG 交流群入口
+  telegram: '',
   currency: 'CNY',
 }
 

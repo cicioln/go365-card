@@ -14,6 +14,12 @@ const editing = ref<PaymentChannel | null>(null)
 const error = ref('')
 const busy = ref(false)
 const typeText: Record<PaymentChannel['type'], string> = { alipay: '支付宝', wechat: '微信支付', usdt: 'USDT' }
+// 内置 USDT 收款支持的链
+const chainText: Record<NonNullable<PaymentChannel['chain']>, string> = {
+  '': '不使用（走易支付）', bsc: 'BSC (BEP20)', tron: 'TRON (TRC20)', eth: 'Ethereum (ERC20)', polygon: 'Polygon',
+}
+const addressHint = (chain: PaymentChannel['chain']) => (chain === 'tron' ? 'T 开头的 34 位地址' : '0x 开头的 42 位地址')
+const modeText = (c: PaymentChannel) => (c.type === 'usdt' && c.chain ? `内置收款 · ${chainText[c.chain]}` : c.type === 'usdt' ? '易支付' : '')
 
 async function load() {
   try {
@@ -26,7 +32,9 @@ onMounted(load)
 
 function open(c?: PaymentChannel) {
   error.value = ''
-  editing.value = c ? { ...c } : { id: 0, name: '', type: 'alipay', feeRate: 0, enabled: true }
+  editing.value = c
+    ? { ...c, chain: c.chain ?? '', address: c.address ?? '', rate: c.rate ?? 1 }
+    : { id: 0, name: '', type: 'alipay', feeRate: 0, enabled: true, chain: '', address: '', rate: 1 }
 }
 
 async function save() {
@@ -34,7 +42,7 @@ async function save() {
   const c = editing.value!
   busy.value = true
   try {
-    await adminApi.saveChannel({ ...c, feeRate: Number(c.feeRate) })
+    await adminApi.saveChannel({ ...c, feeRate: Number(c.feeRate), rate: Number(c.rate) })
     editing.value = null
     ui.notify('已保存')
     load()
@@ -79,7 +87,10 @@ async function remove(c: PaymentChannel) {
         <tbody>
           <tr v-for="c in list" :key="c.id">
             <td class="font-medium">{{ c.name }}</td>
-            <td>{{ typeText[c.type] }}</td>
+            <td>
+              {{ typeText[c.type] }}
+              <span v-if="modeText(c)" class="block text-xs text-zinc-400">{{ modeText(c) }}</span>
+            </td>
             <td>{{ c.feeRate }}%</td>
             <td>
               <input
@@ -115,6 +126,27 @@ async function remove(c: PaymentChannel) {
         </div>
         <div><label class="label" for="pc-fee">手续费率（%）</label><input id="pc-fee" v-model.number="editing.feeRate" type="number" min="0" max="100" step="0.1" class="input" /></div>
       </div>
+      <template v-if="editing.type === 'usdt'">
+        <div>
+          <label class="label" for="pc-chain">内置收款链</label>
+          <select id="pc-chain" v-model="editing.chain" class="input">
+            <option v-for="(v, k) in chainText" :key="k" :value="k">{{ v }}</option>
+          </select>
+          <p class="mt-1.5 text-xs text-zinc-400">选择链后，买家在订单页扫码向下面的地址转账，系统查询链上记录自动确认到账并发货，不经过第三方平台。</p>
+        </div>
+        <template v-if="editing.chain">
+          <div>
+            <label class="label" for="pc-addr">收款地址</label>
+            <input id="pc-addr" v-model.trim="editing.address" class="input font-mono" :placeholder="addressHint(editing.chain)" autocomplete="off" spellcheck="false" required />
+            <p class="mt-1.5 text-xs text-zinc-400">请确认是 {{ chainText[editing.chain] }} 网络的地址。只需公开地址，不要填写私钥或助记词。</p>
+          </div>
+          <div>
+            <label class="label" for="pc-rate">汇率（1 USDT = ? 站点货币）</label>
+            <input id="pc-rate" v-model.number="editing.rate" type="number" min="0.0001" step="0.0001" class="input" required />
+            <p class="mt-1.5 text-xs text-zinc-400">站点货币为人民币时填写 USDT 兑人民币价格，例如 7.2；站点货币为美元时填 1。</p>
+          </div>
+        </template>
+      </template>
       <label class="flex items-center gap-2 text-sm"><input v-model="editing.enabled" type="checkbox" class="accent-brand" />启用</label>
       <p v-if="error" role="alert" class="text-sm text-red-500">{{ error }}</p>
       <div class="flex justify-end gap-2">

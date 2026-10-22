@@ -12,6 +12,7 @@ import { closeExpired } from './orders.ts'
 import { db } from './db.ts'
 import { pruneBuckets, pruneSessions } from './security.ts'
 import { payConfig } from './settings.ts'
+import { pollUsdt } from './usdt.ts'
 import { initSetup } from './setup.ts'
 import { pub } from './routes/public.ts'
 import { pay } from './routes/pay.ts'
@@ -107,6 +108,9 @@ setInterval(() => {
   }
 }, 60_000).unref()
 closeExpired()
+
+// 内置 USDT 收款：每 20 秒查询一次链上转账（没有待支付的 USDT 订单时不发请求）
+setInterval(() => void pollUsdt().catch((e) => console.error('[usdt]', e)), Number(process.env.USDT_POLL_SECONDS || 20) * 1000).unref()
 
 // docker stop 时发送 SIGTERM：关闭数据库后退出，避免写入中断
 for (const sig of ['SIGTERM', 'SIGINT'] as const)

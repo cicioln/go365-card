@@ -85,6 +85,20 @@ CREATE TABLE IF NOT EXISTS order_lines (
 CREATE INDEX IF NOT EXISTS order_lines_order ON order_lines(order_no);
 `)
 
+/** 给旧数据库补列 */
+function addColumn(table: string, column: string, def: string) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]
+  if (!cols.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`)
+}
+// 内置 USDT 收款：渠道配置链与地址；订单记录收款地址与唯一金额（单位 0.0001 USDT）
+addColumn('channels', 'chain', "TEXT NOT NULL DEFAULT ''")
+addColumn('channels', 'address', "TEXT NOT NULL DEFAULT ''")
+addColumn('channels', 'rate', 'REAL NOT NULL DEFAULT 1')
+addColumn('orders', 'pay_chain', "TEXT NOT NULL DEFAULT ''")
+addColumn('orders', 'pay_address', "TEXT NOT NULL DEFAULT ''")
+addColumn('orders', 'pay_units', 'INTEGER NOT NULL DEFAULT 0')
+db.exec('CREATE INDEX IF NOT EXISTS orders_usdt ON orders(pay_chain, pay_address, pay_units)')
+
 type Param = null | number | bigint | string | Uint8Array
 const cache = new Map<string, StatementSync>()
 const stmt = (sql: string) => {
@@ -136,8 +150,14 @@ export const toPost = (r: PostRow): Post => ({
   id: r.id, slug: r.slug, type: r.type, title: r.title, summary: r.summary, content: r.content, publishedAt: r.published_at,
 })
 
-export interface ChannelRow { id: number; name: string; type: PaymentChannel['type']; fee_rate: number; enabled: number }
-export const toChannel = (r: ChannelRow): PaymentChannel => ({ id: r.id, name: r.name, type: r.type, feeRate: r.fee_rate, enabled: !!r.enabled })
+export interface ChannelRow {
+  id: number; name: string; type: PaymentChannel['type']; fee_rate: number; enabled: number
+  chain: string; address: string; rate: number
+}
+export const toChannel = (r: ChannelRow): PaymentChannel => ({
+  id: r.id, name: r.name, type: r.type, feeRate: r.fee_rate, enabled: !!r.enabled,
+  chain: (r.chain || '') as PaymentChannel['chain'], address: r.address, rate: r.rate,
+})
 
 export const listCategories = () => all<CategoryRow>('SELECT * FROM categories ORDER BY sort, id').map(toCategory)
 export const listChannels = () => all<ChannelRow>('SELECT * FROM channels ORDER BY sort, id').map(toChannel)
@@ -154,7 +174,12 @@ export function getSetting<T>(key: string, fallback: T): T {
 export const setSetting = (key: string, value: unknown) =>
   run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value', key, JSON.stringify(value))
 
-export const getSite = (): SiteConfig => ({ ...seed.siteConfig, ...getSetting<Partial<SiteConfig>>('site', {}) })
+export function getSite(): SiteConfig {
+  const site = { ...seed.siteConfig, ...getSetting<Partial<SiteConfig>>('site', {}) }
+  // 旧版演示数据写入的占位链接视为未配置
+  if (/^https?:\/\/t\.me\/?$/i.test(site.telegram)) site.telegram = ''
+  return site
+}
 export const setSite = (site: SiteConfig) => setSetting('site', site)
 
 // ---- 初始化 ----

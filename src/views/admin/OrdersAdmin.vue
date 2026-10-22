@@ -173,6 +173,8 @@ function exportCsv() {
       <div><dt class="text-zinc-500">下单时间</dt><dd>{{ new Date(viewing.createdAt).toLocaleString() }}</dd></div>
       <div><dt class="text-zinc-500">支付方式</dt><dd>{{ viewing.channel }}（手续费 {{ money(viewing.fee) }}）</dd></div>
       <div><dt class="text-zinc-500">实付</dt><dd class="font-bold text-price">{{ money(viewing.amount) }}</dd></div>
+      <div v-if="viewing.usdt" class="sm:col-span-2"><dt class="text-zinc-500">USDT 收款</dt><dd class="font-mono break-all">{{ viewing.usdt.amount }} USDT · {{ viewing.usdt.network }} · {{ viewing.usdt.address }}</dd></div>
+      <div v-if="viewing.tradeNo" class="sm:col-span-2"><dt class="text-zinc-500">支付流水 / 交易哈希</dt><dd class="font-mono break-all">{{ viewing.tradeNo }}</dd></div>
       <div v-if="viewing.paidAt"><dt class="text-zinc-500">支付时间</dt><dd>{{ new Date(viewing.paidAt).toLocaleString() }}</dd></div>
     </dl>
     <ul class="mt-4 divide-y divide-black/5 rounded-xl border border-black/5 text-sm dark:divide-white/10 dark:border-white/10">

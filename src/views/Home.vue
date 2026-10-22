@@ -63,7 +63,7 @@ const pill =
           <span class="text-left"><span class="block text-sm font-bold">{{ t('home.selfQuery') }}</span><span class="block text-xs text-zinc-500">{{ t('home.noLogin') }}</span></span>
           <ChevronRight class="ml-auto h-4 w-4 text-zinc-400" />
         </button>
-        <a :href="db.site.telegram" target="_blank" rel="noopener" class="btn-ghost justify-start py-3">
+        <a v-if="db.site.telegram" :href="db.site.telegram" target="_blank" rel="noopener" class="btn-ghost justify-start py-3">
           <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-500 dark:bg-sky-500/15"><Send class="h-4 w-4" /></span>
           <span class="text-left"><span class="block text-sm font-bold">{{ t('home.tg') }}</span><span class="block text-xs text-zinc-500">{{ t('home.official') }}</span></span>
           <ChevronRight class="ml-auto h-4 w-4 text-zinc-400" />

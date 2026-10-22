@@ -25,6 +25,8 @@ export function epaySign(params: Record<string, string>, key: string) {
 export function payUrl(o: OrderRow, baseUrl: string) {
   const pay = payConfig()
   const token = orderToken(o.order_no)
+  // 内置 USDT 订单在订单页扫码转账，不跳转网关
+  if (o.pay_chain) fail('请按订单页显示的地址和金额转账')
   if (pay.provider === 'mock') return `/api/pay/mock/${o.order_no}?t=${token}`
   if (!pay.epayUrl || !pay.epayPid || !pay.epayKey) fail('支付暂不可用，请联系客服', 503)
   const params: Record<string, string> = {

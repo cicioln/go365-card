@@ -56,7 +56,7 @@ async function changePwd() {
       <h2 class="font-bold">站点信息</h2>
       <div><label class="label" for="s-name">站点名称</label><input id="s-name" v-model="site.siteName" class="input" required /></div>
       <div><label class="label" for="s-desc">站点描述</label><input id="s-desc" v-model="site.description" class="input" /></div>
-      <div><label class="label" for="s-tg">Telegram 群链接</label><input id="s-tg" v-model="site.telegram" type="url" class="input" /></div>
+      <div><label class="label" for="s-tg">Telegram 群链接</label><input id="s-tg" v-model="site.telegram" type="url" class="input" placeholder="https://t.me/xxx" /><p class="mt-1.5 text-xs text-zinc-400">留空则前台不显示 TG 交流群入口</p></div>
       <div>
         <label class="label" for="s-cur">货币</label>
         <select id="s-cur" v-model="site.currency" class="input"><option>CNY</option><option>USD</option></select>

@@ -20,6 +20,7 @@ curl.exe -O https://raw.githubusercontent.com/cicioln/go365-card/main/docker-com
 
 1. 浏览器打开 `http://服务器IP:3000/admin`，输入日志中的安装码，设置管理员账号。
 2. 进入「支付渠道」，填写易支付的网关地址、商户号、密钥，确认站点地址，切换为易支付。
+   只收 USDT 的话可以不接易支付：编辑 USDT 渠道，选择收款链（BSC / TRON / Ethereum / Polygon），填写收款地址和汇率。买家在订单页扫码，按系统给出的唯一金额（精确到 4 位小数）转账，服务端每 20 秒查询一次链上记录，到账后自动发货。链上查询默认使用公共节点，可用 `USDT_RPC_BSC` 等环境变量换成自己的节点，TRON 可设置 `TRONGRID_API_KEY`。
 3. 在「商品管理」把演示卡密（`DEMO-` 开头）换成真实卡密。
 
 不需要 `.env`。数据保存在名为 `shop-data` 的 Docker 卷中，更新镜像（`docker compose pull && docker compose up -d`）不会丢失。

@@ -12,6 +12,7 @@ import { cleanHtml } from '../sanitize.ts'
 import { mergePay, payConfig, payLocks, publicUrl, requestOrigin, type PayConfig } from '../settings.ts'
 import { checkSetupCode, clearSetupCode, createAdmin, needsSetup } from '../setup.ts'
 import { endSession, rateLimit, requireAdmin, revokeSessions, sessionOf, startSession } from '../security.ts'
+import { CHAIN_KEYS, checkAddress } from '../usdt.ts'
 import { body, fail, hexColor, num, oneOf, password, round2, slug, str, url } from '../validate.ts'
 import type { AdminProduct, AdminStats, AdminUser } from '../../src/types.ts'
 
@@ -311,10 +312,15 @@ admin.get('/channels', (c) => c.json(listChannels()))
 
 async function saveChannel(c: Parameters<typeof body>[0], id: number | null) {
   const b = await body(c)
-  const data = [str(b.name, '渠道名称', 60), oneOf(b.type, ['alipay', 'wechat', 'usdt'] as const, '类型'),
-    round2(num(b.feeRate, '手续费率', 0, 100)), b.enabled === false ? 0 : 1] as const
-  if (id) run('UPDATE channels SET name = ?, type = ?, fee_rate = ?, enabled = ? WHERE id = ?', ...data, id)
-  else run('INSERT INTO channels (name, type, fee_rate, enabled, sort) VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(sort), 0) + 1 FROM channels))', ...data)
+  const type = oneOf(b.type, ['alipay', 'wechat', 'usdt'] as const, '类型')
+  // 内置 USDT 收款：选了链就必须填写收款地址；不选链则走易支付
+  const chain = type === 'usdt' ? oneOf(b.chain ?? '', ['', ...CHAIN_KEYS] as const, '收款链') : ''
+  const address = chain ? checkAddress(chain, str(b.address, '收款地址', 64)) : ''
+  const rate = chain ? num(b.rate, '汇率', 0.0001, 1e6) : 1
+  const data = [str(b.name, '渠道名称', 60), type, round2(num(b.feeRate, '手续费率', 0, 100)), b.enabled === false ? 0 : 1, chain, address, rate] as const
+  if (id) run('UPDATE channels SET name = ?, type = ?, fee_rate = ?, enabled = ?, chain = ?, address = ?, rate = ? WHERE id = ?', ...data, id)
+  else run(`INSERT INTO channels (name, type, fee_rate, enabled, chain, address, rate, sort)
+    VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort), 0) + 1 FROM channels))`, ...data)
   return c.json({ ok: true })
 }
 
