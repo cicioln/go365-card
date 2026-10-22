@@ -65,7 +65,7 @@ async function remove(p: Post) {
     </div>
     <div class="overflow-x-auto">
       <table class="tbl">
-        <thead><tr><th>标题</th><th>类型</th><th>Slug</th><th>发布日期</th><th class="text-right">操作</th></tr></thead>
+        <thead><tr><th>标题</th><th>类型</th><th>链接标识</th><th>发布日期</th><th class="text-right">操作</th></tr></thead>
         <tbody>
           <tr v-if="!list.length"><td colspan="5" class="py-10 text-center text-zinc-500">暂无文章</td></tr>
           <tr v-for="p in list" :key="p.id">
@@ -94,7 +94,7 @@ async function remove(p: Post) {
     <form class="space-y-4" @submit.prevent="save">
       <div><label class="label" for="po-title">标题</label><input id="po-title" v-model="editing.title" class="input" required /></div>
       <div class="grid gap-4 sm:grid-cols-3">
-        <div><label class="label" for="po-slug">Slug</label><input id="po-slug" v-model="editing.slug" class="input" required /></div>
+        <div><label class="label" for="po-slug">链接标识</label><input id="po-slug" v-model="editing.slug" class="input" placeholder="例如 notice-1" required /></div>
         <div>
           <label class="label" for="po-type">类型</label>
           <select id="po-type" v-model="editing.type" class="input"><option value="notice">公告</option><option value="blog">博客</option></select>

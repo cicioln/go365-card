@@ -77,7 +77,7 @@ async function move(i: number, d: number) {
     </div>
     <div class="overflow-x-auto">
       <table class="tbl">
-        <thead><tr><th>排序</th><th>分类</th><th>Slug</th><th>商品数</th><th class="text-right">操作</th></tr></thead>
+        <thead><tr><th>排序</th><th>分类</th><th>链接标识</th><th>商品数</th><th class="text-right">操作</th></tr></thead>
         <tbody>
           <tr v-for="(c, i) in list" :key="c.id">
             <td>
@@ -109,7 +109,7 @@ async function move(i: number, d: number) {
   <AdminModal v-if="editing" :title="editing.id ? '编辑分类' : '新增分类'" @close="editing = null">
     <form class="space-y-4" @submit.prevent="save">
       <div><label class="label" for="c-name">名称</label><input id="c-name" v-model="editing.name" class="input" required /></div>
-      <div><label class="label" for="c-slug">Slug</label><input id="c-slug" v-model="editing.slug" class="input" required /></div>
+      <div><label class="label" for="c-slug">链接标识（小写英文/数字/横杠）</label><input id="c-slug" v-model="editing.slug" class="input" placeholder="例如 gpt" required /></div>
       <div class="grid grid-cols-2 gap-4">
         <div><label class="label" for="c-glyph">图标字符</label><input id="c-glyph" v-model="editing.glyph" maxlength="2" class="input" /></div>
         <div><label class="label" for="c-color">颜色</label><input id="c-color" v-model="editing.color" type="color" class="h-10 w-full cursor-pointer rounded-lg" /></div>

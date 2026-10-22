@@ -98,7 +98,7 @@ async function save() {
         <h2 class="font-bold">基本信息</h2>
         <div><label class="label" for="p-title">标题</label><input id="p-title" v-model="form.title" class="input" required /></div>
         <div class="grid gap-4 sm:grid-cols-2">
-          <div><label class="label" for="p-slug">Slug（URL）</label><input id="p-slug" v-model="form.slug" class="input" placeholder="例如 gemini18" required /></div>
+          <div><label class="label" for="p-slug">链接标识（网址用，小写英文/数字/横杠）</label><input id="p-slug" v-model="form.slug" class="input" placeholder="例如 gemini18 → /products/gemini18" required /></div>
           <div>
             <label class="label" for="p-cat">分类</label>
             <select id="p-cat" v-model.number="form.categoryId" class="input">
