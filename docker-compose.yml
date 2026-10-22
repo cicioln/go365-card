@@ -1,0 +1,24 @@
+# 用法：
+#   本地构建运行：  docker compose up -d --build
+#   使用 GitHub 构建好的镜像：在 .env 中设置 IMAGE=ghcr.io/<用户名>/<仓库名>:latest，然后
+#                  docker compose pull && docker compose up -d
+services:
+  shop:
+    image: ${IMAGE:-go365-card:latest}
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # 容器内固定端口与数据目录，对外端口用 HOST_PORT 修改
+      PORT: "3000"
+      DATA_DIR: /app/data
+    volumes:
+      - shop-data:/app/data
+
+volumes:
+  # 数据库、上传图片、签名密钥都在这里，删除卷会丢失全部数据
+  shop-data:
