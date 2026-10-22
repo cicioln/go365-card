@@ -7,7 +7,7 @@ import { fail } from '../validate.ts'
 
 export const pay = new Hono()
 
-// ---- 模拟收银台（仅 PAY_PROVIDER=mock 时可用）----
+// ---- 模拟收银台（仅开发模式且选择模拟支付时可用，生产模式下 provider 恒为 epay）----
 
 function mockOrder(no: string, token: string | undefined) {
   if (payConfig().provider !== 'mock') fail('模拟支付未启用', 404)

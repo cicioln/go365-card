@@ -7,7 +7,7 @@ export const useAdminStore = defineStore('admin', () => {
   const username = ref<string | null>(null)
   /** 尚未创建管理员，需要走首次安装向导 */
   const needsSetup = ref(false)
-  /** 是否仍在使用模拟支付（后台顶部显示警告） */
+  /** 是否仍在使用模拟支付（仅开发模式，后台顶部显示警告） */
   const mockPay = ref(false)
   let checking: Promise<void> | null = null
 

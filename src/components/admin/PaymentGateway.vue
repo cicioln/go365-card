@@ -10,7 +10,7 @@ import { errorText } from '../../http'
 const admin = useAdminStore()
 const ui = useUiStore()
 const data = ref<PaymentSettings | null>(null)
-const form = ref<PaymentInput>({ provider: 'mock', epayUrl: '', epayPid: '', epayKey: '', publicUrl: '' })
+const form = ref<PaymentInput>({ provider: 'epay', epayUrl: '', epayPid: '', epayKey: '', publicUrl: '' })
 const error = ref('')
 const busy = ref(false)
 
@@ -61,12 +61,17 @@ async function copy(text: string) {
   <form class="card space-y-4 p-6" @submit.prevent="save">
     <div class="flex flex-wrap items-center gap-3">
       <h2 class="font-bold">支付网关</h2>
-      <span v-if="data" class="badge" :class="data.provider === 'epay' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15' : 'bg-amber-50 text-amber-600 dark:bg-amber-500/15'">
-        当前：{{ data.provider === 'epay' ? '易支付' : '模拟支付' }}
+      <span v-if="data" class="badge" :class="data.provider === 'epay' && data.epayReady ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15' : 'bg-amber-50 text-amber-600 dark:bg-amber-500/15'">
+        当前：{{ data.provider === 'mock' ? '模拟支付' : data.epayReady ? '易支付' : '易支付未配置' }}
       </span>
     </div>
 
-    <fieldset :disabled="locks.provider">
+    <!-- 生产模式只有易支付；未配置时支付宝、微信等渠道不会显示给买家，只能用内置 USDT 收款 -->
+    <p v-if="data && !data.mockAllowed && !data.epayReady" class="rounded-xl bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+      易支付未配置：前台只显示内置 USDT 渠道。填写下方网关地址、商户号和密钥后，支付宝、微信等渠道才会出现在结算页。
+    </p>
+
+    <fieldset v-if="data?.mockAllowed" :disabled="locks.provider">
       <legend class="label">支付模式<Lock v-if="locks.provider" class="h-3.5 w-3.5 text-zinc-400" /></legend>
       <div class="grid gap-3 sm:grid-cols-2">
         <label class="flex cursor-pointer items-start gap-2 rounded-xl border p-3 text-sm" :class="form.provider === 'mock' ? 'border-brand bg-brand-soft dark:bg-brand/20' : 'border-black/10 dark:border-white/10'">

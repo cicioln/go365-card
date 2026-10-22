@@ -4,7 +4,7 @@ import { hashPassword, queryHash, safeEqual, verifyOrderToken, verifyPassword } 
 import { all, findPost, getSite, listCategories, listChannels, listPosts, one, run, PRODUCT_SQL, toProduct, type ProductRow } from '../db.ts'
 import { createOrder, findOrder, toOrder, type OrderRow } from '../orders.ts'
 import { payUrl } from '../pay.ts'
-import { publicUrl } from '../settings.ts'
+import { channelPayable, publicUrl } from '../settings.ts'
 import { endSession, rateLimit, sessionOf, startSession } from '../security.ts'
 import { body, email, fail, num, password, str } from '../validate.ts'
 
@@ -19,8 +19,8 @@ const currentUser = (c: Parameters<typeof sessionOf>[0]) => {
 
 pub.get('/site', (c) => c.json(getSite()))
 pub.get('/categories', (c) => c.json(listCategories()))
-// 收款地址只在订单里返回
-pub.get('/channels', (c) => c.json(listChannels().filter((ch) => ch.enabled).map(({ address: _a, rate: _r, ...ch }) => ch)))
+// 收款地址只在订单里返回；生产模式未配置易支付时只显示内置 USDT 渠道
+pub.get('/channels', (c) => c.json(listChannels().filter((ch) => ch.enabled && channelPayable(ch)).map(({ address: _a, rate: _r, ...ch }) => ch)))
 
 pub.get('/products', (c) => {
   const cat = Number(c.req.query('categoryId')) || 0

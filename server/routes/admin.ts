@@ -9,7 +9,7 @@ import {
 } from '../db.ts'
 import { closeOrder, deleteOrder, deliverLine, findOrder, markPaid, toOrder, type OrderRow } from '../orders.ts'
 import { cleanHtml } from '../sanitize.ts'
-import { mergePay, payConfig, payLocks, publicUrl, requestOrigin, type PayConfig } from '../settings.ts'
+import { epayReady, mergePay, MOCK_ALLOWED, payConfig, payLocks, publicUrl, requestOrigin, type PayConfig } from '../settings.ts'
 import { checkSetupCode, clearSetupCode, createAdmin, needsSetup } from '../setup.ts'
 import { endSession, rateLimit, requireAdmin, revokeSessions, sessionOf, startSession } from '../security.ts'
 import { CHAIN_KEYS, checkAddress } from '../usdt.ts'
@@ -407,6 +407,7 @@ function paymentView(c: Parameters<typeof publicUrl>[0]) {
   const p = payConfig()
   return {
     provider: p.provider, epayUrl: p.epayUrl, epayPid: p.epayPid, hasKey: !!p.epayKey,
+    mockAllowed: MOCK_ALLOWED, epayReady: epayReady(p),
     publicUrl: publicUrl(c), notifyUrl: `${publicUrl(c)}/api/pay/epay/notify`, locks: payLocks(),
   }
 }
@@ -417,7 +418,7 @@ admin.put('/payment', async (c) => {
   const b = await body(c)
   const saved = getSetting<Partial<PayConfig>>('payment', {})
   const next: Partial<PayConfig> = {
-    provider: oneOf(b.provider, ['mock', 'epay'] as const, '支付模式'),
+    provider: oneOf(b.provider, MOCK_ALLOWED ? ['mock', 'epay'] as const : ['epay'] as const, '支付模式'),
     epayUrl: url(b.epayUrl, '网关地址').replace(/\/+$/, ''),
     epayPid: str(b.epayPid, '商户号', 64, false),
     // 留空表示不修改已保存的密钥
@@ -426,7 +427,8 @@ admin.put('/payment', async (c) => {
   const site = url(b.publicUrl, '站点地址').replace(/\/+$/, '')
   // 按合并环境变量后的最终结果校验
   const eff = mergePay(next)
-  if (eff.provider === 'epay' && (!eff.epayUrl || !eff.epayPid || !eff.epayKey)) fail('启用易支付需要填写网关地址、商户号和商户密钥')
+  // 生产模式只有易支付一种，允许先留空（此时只能用内置 USDT 收款）
+  if (eff.provider === 'epay' && MOCK_ALLOWED && !epayReady(eff)) fail('启用易支付需要填写网关地址、商户号和商户密钥')
   setSetting('payment', next)
   if (!payLocks().publicUrl) setSetting('publicUrl', site)
   console.log(`[admin] 支付配置已更新：${eff.provider}`)

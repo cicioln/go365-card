@@ -14,6 +14,10 @@ export interface PaymentSettings {
   epayUrl: string
   epayPid: string
   hasKey: boolean
+  /** 开发模式才允许模拟支付 */
+  mockAllowed: boolean
+  /** 易支付参数是否填写完整 */
+  epayReady: boolean
   publicUrl: string
   notifyUrl: string
   /** 被环境变量锁定、后台只读的项 */

@@ -1,6 +1,7 @@
 import { config } from './config.ts'
 import { orderToken, queryHash } from './crypto.ts'
 import { all, one, run, tx, PRODUCT_SQL, toProduct, randomCode, type ChannelRow, type ProductRow } from './db.ts'
+import { channelPayable } from './settings.ts'
 import { allocateUnits, CHAINS, unitsToUsdt, USDT_GRACE_MS, type Chain } from './usdt.ts'
 import { fail, round2 } from './validate.ts'
 import { unitPriceFor } from '../src/utils/pricing.ts'
@@ -61,7 +62,7 @@ export function createOrder(input: {
 
   return tx(() => {
     const ch = one<ChannelRow>('SELECT * FROM channels WHERE id = ? AND enabled = 1', input.channelId)
-    if (!ch) fail('支付方式不可用，请刷新后重试')
+    if (!ch || !channelPayable(ch)) fail('支付方式不可用，请刷新后重试')
 
     const now = new Date()
     const orderNo = `DJ${now.toISOString().replace(/\D/g, '').slice(0, 14)}${randomCode(6)}`

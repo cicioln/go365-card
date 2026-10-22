@@ -1,5 +1,5 @@
 import type { Context } from 'hono'
-import { config } from './config.ts'
+import { config, MODE } from './config.ts'
 import { getSetting } from './db.ts'
 
 // 业务配置：保存在数据库，后台可修改；设置了对应环境变量时以环境变量为准，后台只读
@@ -29,11 +29,14 @@ export const payLocks = () => ({
   publicUrl: !!env.PUBLIC_URL,
 })
 
+/** 模拟支付只在开发模式可用；生产模式一律走易支付，未配置时第三方渠道无法付款 */
+export const MOCK_ALLOWED = MODE === 'dev'
+
 /** 合并环境变量与数据库中的支付配置 */
 export function mergePay(saved: Partial<PayConfig>): PayConfig {
   const pick = (k: keyof PayConfig) => ENV_PAY[k] ?? saved[k] ?? ''
   return {
-    provider: pick('provider') === 'epay' ? 'epay' : 'mock',
+    provider: pick('provider') === 'epay' || !MOCK_ALLOWED ? 'epay' : 'mock',
     epayUrl: pick('epayUrl').replace(/\/+$/, ''),
     epayPid: pick('epayPid'),
     epayKey: pick('epayKey'),
@@ -42,6 +45,16 @@ export function mergePay(saved: Partial<PayConfig>): PayConfig {
 
 /** 当前生效的支付配置（每次实时读取，后台修改后立即生效） */
 export const payConfig = () => mergePay(getSetting<Partial<PayConfig>>('payment', {}))
+
+/** 易支付参数是否填写完整 */
+export const epayReady = (p: PayConfig) => !!(p.epayUrl && p.epayPid && p.epayKey)
+
+/** 渠道当前能否收款：内置 USDT 始终可以；其余渠道需要模拟支付或已配置好的易支付 */
+export function channelPayable(ch: { chain?: string }) {
+  if (ch.chain) return true
+  const p = payConfig()
+  return p.provider === 'mock' || epayReady(p)
+}
 
 /** 浏览器访问本站使用的地址；在反向代理后时按 X-Forwarded-* 还原 */
 export function requestOrigin(c: Context) {
