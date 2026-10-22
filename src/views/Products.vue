@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { getCategories, getProducts } from '../api'
 import type { Category, Product } from '../data/mock'
 import ProductCard from '../components/ProductCard.vue'
@@ -10,7 +11,8 @@ const { t } = useI18n()
 const categories = ref<Category[]>([])
 const list = ref<Product[]>([])
 const loading = ref(true)
-const keyword = ref('')
+const route = useRoute()
+const keyword = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const cat = ref<number | undefined>()
 
 async function refresh() {
@@ -31,18 +33,17 @@ onMounted(async () => {
   refresh()
 })
 
-const item = 'w-full rounded-xl px-4 py-3 text-left font-semibold transition'
+const item = 'w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition'
 </script>
 
 <template>
-  <section class="py-12 text-center">
-    <h1 class="text-4xl font-black sm:text-5xl">{{ t('product.center') }}</h1>
-    <p class="mt-3 text-zinc-500">{{ t('product.centerSub') }}</p>
-    <hr class="mx-auto mt-8 max-w-2xl border-black/10 dark:border-white/10" />
+  <section class="py-8 sm:py-10">
+    <h1 class="text-3xl font-black tracking-tight sm:text-4xl">{{ t('product.center') }}</h1>
+    <p class="mt-2 text-zinc-500">{{ t('product.centerSub') }}</p>
   </section>
 
-  <div class="flex flex-col gap-8 md:flex-row">
-    <aside class="card h-fit p-6 md:sticky md:top-24 md:w-64 md:shrink-0">
+  <div class="flex flex-col gap-6 md:flex-row">
+    <aside class="card h-fit p-5 md:sticky md:top-24 md:w-60 md:shrink-0">
       <label for="kw" class="text-xs font-bold text-zinc-500">{{ t('product.search') }}</label>
       <input id="kw" v-model="keyword" class="input mt-2" :placeholder="t('product.searchPh')" />
       <h2 class="mt-6 border-l-4 border-brand pl-2 text-lg font-bold">{{ t('product.category') }}</h2>
@@ -61,7 +62,7 @@ const item = 'w-full rounded-xl px-4 py-3 text-left font-semibold transition'
       </div>
     </aside>
 
-    <div class="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div class="grid flex-1 grid-cols-2 content-start gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
       <template v-if="loading"><SkeletonCard v-for="i in 8" :key="i" /></template>
       <template v-else>
         <ProductCard v-for="p in list" :key="p.id" :product="p" />

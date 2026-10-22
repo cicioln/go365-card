@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { Mail, Lock, CreditCard } from 'lucide-vue-next'
+import { Mail, Lock, CreditCard, Wallet, MessageCircle, Coins, CircleCheck } from 'lucide-vue-next'
 import { createOrder, getPaymentChannels, getProductsByIds, orderLink, unitPriceFor } from '../api'
 import type { PaymentChannel, Product } from '../data/mock'
 import { useCartStore } from '../stores/cart'
@@ -15,6 +15,12 @@ const route = useRoute()
 const router = useRouter()
 const cart = useCartStore()
 const auth = useAuthStore()
+
+const chIcon: Record<string, { icon: unknown; cls: string }> = {
+  alipay: { icon: Wallet, cls: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15' },
+  wechat: { icon: MessageCircle, cls: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15' },
+  usdt: { icon: Coins, cls: 'bg-teal-50 text-teal-600 dark:bg-teal-500/15' },
+}
 
 const email = ref(auth.user ?? '')
 const password = ref('')
@@ -89,7 +95,7 @@ async function submit() {
 
 <template>
   <div class="mx-auto max-w-3xl py-10">
-    <h1 class="mb-6 text-3xl font-bold">{{ t('checkout.title') }}</h1>
+    <h1 class="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">{{ t('checkout.title') }}</h1>
     <p v-if="loading" class="card py-16 text-center text-zinc-500">{{ t('common.loading') }}</p>
     <form v-else class="grid gap-6" novalidate @submit.prevent="submit">
       <div class="card divide-y divide-black/5 dark:divide-white/10">
@@ -115,11 +121,18 @@ async function submit() {
             <label
               v-for="c in channels"
               :key="c.id"
-              class="flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm transition"
-              :class="channelId === c.id ? 'border-brand bg-brand-soft dark:bg-brand/20' : 'border-black/10 dark:border-white/10'"
+              class="flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-sm transition has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-brand/20"
+              :class="channelId === c.id ? 'border-brand bg-brand-soft dark:bg-brand/20' : 'border-black/10 hover:border-brand/40 dark:border-white/10'"
             >
-              <input v-model="channelId" type="radio" name="channel" :value="c.id" class="accent-brand" />
-              {{ c.name }}
+              <input v-model="channelId" type="radio" name="channel" :value="c.id" class="sr-only" />
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" :class="chIcon[c.type]?.cls">
+                <component :is="chIcon[c.type]?.icon ?? CreditCard" class="h-[18px] w-[18px]" />
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="block truncate font-semibold">{{ c.name }}</span>
+                <span v-if="c.feeRate" class="block text-xs text-zinc-500">{{ t('checkout.fee') }} {{ c.feeRate }}%</span>
+              </span>
+              <CircleCheck v-if="channelId === c.id" class="h-[18px] w-[18px] shrink-0 text-brand" />
             </label>
           </div>
         </fieldset>

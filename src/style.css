@@ -26,7 +26,7 @@ body {
 /* 放在 components 层，便于工具类覆盖 */
 @layer components {
 .card {
-  @apply rounded-2xl border border-black/5 bg-white shadow-[0_2px_12px_rgb(0_0_0/4%)] dark:border-white/10 dark:bg-zinc-900;
+  @apply rounded-2xl border border-black/[0.06] bg-white shadow-[0_1px_2px_rgb(0_0_0/4%),0_4px_16px_rgb(0_0_0/3%)] dark:border-white/10 dark:bg-zinc-900;
 }
 
 .btn-primary {

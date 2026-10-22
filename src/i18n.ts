@@ -6,6 +6,9 @@ const zh = {
   home: {
     notice: '网站公告', detail: '查看详情', selfQuery: '自助查单', noLogin: '无需登录', tg: 'TG 售后群', official: '官方售后',
     all: '全部', news: '最新动态', newsSub: '随时掌握我们的最新消息和公告', readMore: '阅读更多',
+    heroSub: '数字商品自动发货，下单即用', hot: '热门商品', hotSub: '精选商品，库存实时更新', viewAll: '查看全部',
+    perkAuto: '自动发货', perkAutoSub: '付款后秒发卡密', perk24: '7×24 小时', perk24Sub: '全天候自助下单',
+    perkSafe: '安全支付', perkSafeSub: '多种支付方式', perkAfter: '售后无忧', perkAfterSub: '问题及时处理',
   },
   product: {
     auto: '自动交付', manual: '人工交付', recommend: '推荐', buy: '快速购买', stock: '库存', sold: '已售', soldOut: '售罄',
@@ -55,6 +58,9 @@ const en: Messages = {
   home: {
     notice: 'Announcement', detail: 'Details', selfQuery: 'Order Lookup', noLogin: 'No login', tg: 'TG Support', official: 'Official',
     all: 'All', news: 'Latest News', newsSub: 'Stay up to date with our news', readMore: 'Read more',
+    heroSub: 'Digital goods with instant delivery', hot: 'Popular', hotSub: 'Hand-picked products, live stock', viewAll: 'View all',
+    perkAuto: 'Instant delivery', perkAutoSub: 'Cards sent right after payment', perk24: '24/7', perk24Sub: 'Order any time',
+    perkSafe: 'Secure payment', perkSafeSub: 'Multiple methods', perkAfter: 'After-sales', perkAfterSub: 'Fast support',
   },
   product: {
     auto: 'Auto', manual: 'Manual', recommend: 'Hot', buy: 'Buy', stock: 'Stock', sold: 'Sold', soldOut: 'Sold out',

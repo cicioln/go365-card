@@ -45,12 +45,12 @@ const active = '!bg-brand-soft !text-brand dark:!bg-brand/20'
 
 <template>
   <header class="sticky top-0 z-40 border-b border-black/5 bg-white/85 backdrop-blur dark:border-white/10 dark:bg-zinc-950/85">
-    <div class="mx-auto flex h-[72px] max-w-[1280px] items-center gap-2 px-4 sm:gap-4">
+    <div class="mx-auto flex h-16 max-w-[1280px] items-center gap-2 px-4 sm:gap-4">
       <RouterLink
         to="/"
-        class="flex min-w-0 items-center gap-2 rounded-full border border-black/15 px-3 py-2 font-bold sm:px-4 dark:border-white/20"
+        class="flex min-w-0 items-center gap-2 rounded-xl px-1.5 py-1.5 font-bold tracking-tight transition hover:bg-black/5 dark:hover:bg-white/10"
       >
-        <img src="/logo.svg" alt="" class="h-6 w-6 shrink-0 dark:invert" />
+        <img src="/logo.svg" alt="" class="h-7 w-7 shrink-0 dark:invert" />
         <span class="truncate">{{ db.site.siteName }}</span>
       </RouterLink>
 

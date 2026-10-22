@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { ShoppingCart, Package, Receipt } from 'lucide-vue-next'
+import { ShoppingCart, Zap, Hand, Flame } from 'lucide-vue-next'
 import type { Product } from '../data/mock'
 import { useCartStore } from '../stores/cart'
 import { useUiStore } from '../stores/ui'
@@ -26,53 +26,53 @@ function quickBuy() {
 
 <template>
   <article
-    class="card group overflow-hidden transition"
-    :class="product.stock > 0 ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg' : 'opacity-90'"
+    class="card group flex flex-col overflow-hidden transition duration-300"
+    :class="product.stock > 0 ? 'cursor-pointer hover:-translate-y-1 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5' : ''"
     @click="open"
   >
-    <div class="relative">
-      <ProductCover :product="product" :class="product.stock <= 0 && 'grayscale brightness-50'" />
-      <span
-        v-if="product.stock <= 0"
-        class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-800/90 px-4 py-1.5 text-sm font-bold text-white"
-      >{{ t('product.soldOut') }}</span>
-    </div>
-    <div class="p-4">
-      <div class="flex gap-1.5 text-[11px] font-bold">
-        <span
-          class="rounded-md px-1.5 py-0.5"
-          :class="product.fulfillment === 'auto' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15' : 'bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300'"
-        >
-          {{ product.fulfillment === 'auto' ? t('product.auto') : t('product.manual') }}
-        </span>
-        <span v-if="product.recommended" class="rounded-md bg-sky-50 px-1.5 py-0.5 text-sky-600 dark:bg-sky-500/15">
-          {{ t('product.recommend') }}
+    <div class="relative overflow-hidden">
+      <ProductCover :product="product" :class="product.stock <= 0 && 'opacity-50 grayscale'" />
+      <!-- 角标放在封面左上角，不遮挡封面标题 -->
+      <div class="absolute left-2.5 top-2.5 flex flex-wrap gap-1 text-[11px] font-bold">
+        <span v-if="product.stock <= 0" class="rounded-md bg-zinc-900/85 px-1.5 py-0.5 text-white">{{ t('product.soldOut') }}</span>
+        <span v-else-if="product.recommended" class="flex items-center gap-0.5 rounded-md bg-price px-1.5 py-0.5 text-white shadow-sm">
+          <Flame class="h-3 w-3" />{{ t('product.recommend') }}
         </span>
       </div>
+    </div>
+    <div class="flex flex-1 flex-col p-3 sm:p-4">
+      <span
+        class="flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold"
+        :class="product.fulfillment === 'auto' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15' : 'bg-amber-50 text-amber-600 dark:bg-amber-500/15'"
+      >
+        <Zap v-if="product.fulfillment === 'auto'" class="h-3 w-3" /><Hand v-else class="h-3 w-3" />
+        {{ product.fulfillment === 'auto' ? t('product.auto') : t('product.manual') }}
+      </span>
       <RouterLink
         :to="`/products/${product.slug}`"
-        class="mt-2 line-clamp-2 min-h-[3rem] font-bold leading-6"
+        class="mt-2 line-clamp-2 min-h-[2.75rem] text-sm leading-[1.375rem] font-bold transition group-hover:text-brand sm:text-[15px]"
         @click.stop
       >
         <h3>{{ product.title }}</h3>
       </RouterLink>
-      <div class="mt-3 flex items-center justify-between">
-        <p class="font-bold" :class="product.stock > 0 ? 'text-price' : 'text-zinc-300'" :aria-label="`价格 ${money(product.price)}`">
-          <span class="text-sm">{{ currencySymbol() }}</span><span class="text-2xl">{{ product.price.toFixed(2) }}</span>
-        </p>
+      <div class="mt-auto flex items-end justify-between gap-2 pt-3">
+        <div class="min-w-0">
+          <p class="font-bold leading-none" :class="product.stock > 0 ? 'text-price' : 'text-zinc-400'" :aria-label="`价格 ${money(product.price)}`">
+            <span class="text-xs sm:text-sm">{{ currencySymbol() }}</span><span class="text-xl sm:text-2xl">{{ product.price.toFixed(2) }}</span>
+          </p>
+          <p class="mt-1.5 truncate text-[11px] text-zinc-500">
+            {{ t('product.stock') }} {{ product.stock }} · {{ t('product.sold') }} {{ product.sold }}
+          </p>
+        </div>
         <button
-          class="flex h-11 w-11 items-center justify-center rounded-xl border border-black/10 text-zinc-600 transition hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-zinc-300"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400 sm:h-10 sm:w-10 dark:bg-brand/20 dark:disabled:bg-white/5"
           :disabled="product.stock <= 0"
           :aria-label="t('product.buy')"
           :title="t('product.buy')"
           @click.stop="quickBuy"
         >
-          <ShoppingCart class="h-5 w-5" />
+          <ShoppingCart class="h-[18px] w-[18px]" />
         </button>
-      </div>
-      <div class="mt-3 flex justify-between border-t border-black/5 pt-3 text-xs font-semibold dark:border-white/10">
-        <span class="flex items-center gap-1 text-brand"><Package class="h-3.5 w-3.5" />{{ t('product.stock') }}: {{ product.stock }}</span>
-        <span class="flex items-center gap-1 text-orange-500"><Receipt class="h-3.5 w-3.5" />{{ t('product.sold') }}: {{ product.sold }}</span>
       </div>
     </div>
   </article>
