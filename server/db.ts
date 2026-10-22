@@ -1,8 +1,7 @@
 import { DatabaseSync, type StatementSync } from 'node:sqlite'
 import { randomBytes } from 'node:crypto'
 import { resolve } from 'node:path'
-import { DATA_DIR, config } from './config.ts'
-import { hashPassword } from './crypto.ts'
+import { DATA_DIR } from './config.ts'
 import * as seed from '../src/data/mock.ts'
 import type { Category, PaymentChannel, Post, Product, SiteConfig } from '../src/data/mock.ts'
 
@@ -148,19 +147,22 @@ export const findPost = (slug: string) => {
   return r ? toPost(r) : null
 }
 
-export function getSite(): SiteConfig {
-  const r = one<{ value: string }>("SELECT value FROM settings WHERE key = 'site'")
-  return { ...seed.siteConfig, ...(r ? JSON.parse(r.value) : {}) }
+export function getSetting<T>(key: string, fallback: T): T {
+  const r = one<{ value: string }>('SELECT value FROM settings WHERE key = ?', key)
+  return r ? (JSON.parse(r.value) as T) : fallback
 }
-export const setSite = (site: SiteConfig) =>
-  run("INSERT INTO settings (key, value) VALUES ('site', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", JSON.stringify(site))
+export const setSetting = (key: string, value: unknown) =>
+  run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value', key, JSON.stringify(value))
+
+export const getSite = (): SiteConfig => ({ ...seed.siteConfig, ...getSetting<Partial<SiteConfig>>('site', {}) })
+export const setSite = (site: SiteConfig) => setSetting('site', site)
 
 // ---- 初始化 ----
 
 const CODE = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 export const randomCode = (n: number) => Array.from(randomBytes(n), (b) => CODE[b % CODE.length]).join('')
 
-/** 首次启动写入演示目录；仅在模拟支付模式下生成演示卡密，避免正式环境误售 */
+/** 首次启动写入演示目录；演示卡密以 DEMO- 开头，上线前需在后台替换（环境变量指定 epay 时不生成） */
 function seedCatalog() {
   if (one('SELECT 1 FROM categories LIMIT 1')) return
   const now = new Date().toISOString()
@@ -175,7 +177,7 @@ function seedCatalog() {
         p.id, p.slug, p.categoryId, p.title, p.description, p.content, p.price, JSON.stringify(p.wholesale),
         p.fulfillment === 'manual' ? p.stock : 0, p.sold, p.fulfillment, p.recommended ? 1 : 0, JSON.stringify(p.cover), i,
       )
-      if (p.fulfillment === 'auto' && config.pay.provider === 'mock')
+      if (p.fulfillment === 'auto' && process.env.PAY_PROVIDER !== 'epay')
         for (let k = 0; k < p.stock; k++)
           run('INSERT INTO cards (product_id, code, created_at) VALUES (?, ?, ?)', p.id, `DEMO-${randomCode(4)}-${randomCode(4)}-${randomCode(4)}`, now)
     })
@@ -188,13 +190,4 @@ function seedCatalog() {
   console.log('[init] 已写入演示商品、分类、文章与支付渠道')
 }
 
-/** 没有管理员时创建 admin：密码取 ADMIN_PASSWORD，否则随机生成并只在控制台显示一次 */
-function seedAdmin() {
-  if (one('SELECT 1 FROM admins LIMIT 1')) return
-  const password = process.env.ADMIN_PASSWORD || randomBytes(9).toString('base64url')
-  run('INSERT INTO admins (username, password_hash, created_at) VALUES (?, ?, ?)', 'admin', hashPassword(password), new Date().toISOString())
-  console.log(`\n[init] 已创建管理员 admin${process.env.ADMIN_PASSWORD ? '（密码取自 ADMIN_PASSWORD）' : `，初始密码：${password}`}\n       请登录后台后立即修改密码\n`)
-}
-
 seedCatalog()
-seedAdmin()

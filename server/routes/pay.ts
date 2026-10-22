@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
-import { config } from '../config.ts'
 import { verifyOrderToken } from '../crypto.ts'
+import { payConfig } from '../settings.ts'
 import { findOrder, markPaid } from '../orders.ts'
 import { mockCashier, verifyEpay } from '../pay.ts'
 import { fail } from '../validate.ts'
@@ -10,7 +10,7 @@ export const pay = new Hono()
 // ---- 模拟收银台（仅 PAY_PROVIDER=mock 时可用）----
 
 function mockOrder(no: string, token: string | undefined) {
-  if (config.pay.provider !== 'mock') fail('模拟支付未启用', 404)
+  if (payConfig().provider !== 'mock') fail('模拟支付未启用', 404)
   const o = findOrder(no)
   if (!o || !token || !verifyOrderToken(no, token)) fail('订单不存在', 404)
   return o

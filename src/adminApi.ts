@@ -9,8 +9,23 @@ const enc = encodeURIComponent
 export type AdminCategory = Category & { productCount: number }
 export type ProductInput = Omit<AdminProduct, 'id' | 'reserved' | 'soldCards'>
 
+export interface PaymentSettings {
+  provider: 'mock' | 'epay'
+  epayUrl: string
+  epayPid: string
+  hasKey: boolean
+  publicUrl: string
+  notifyUrl: string
+  /** 被环境变量锁定、后台只读的项 */
+  locks: Record<'provider' | 'epayUrl' | 'epayPid' | 'epayKey' | 'publicUrl', boolean>
+}
+export type PaymentInput = Pick<PaymentSettings, 'provider' | 'epayUrl' | 'epayPid' | 'publicUrl'> & { epayKey: string }
+
 export const adminApi = {
-  me: () => get<{ username: string | null }>(`${A}/me`),
+  me: () => get<{ username: string | null; needsSetup: boolean }>(`${A}/me`),
+  setup: (code: string, username: string, password: string) => post<{ username: string }>(`${A}/setup`, { code, username, password }),
+  payment: () => get<PaymentSettings>(`${A}/payment`),
+  savePayment: (p: PaymentInput) => put<PaymentSettings>(`${A}/payment`, p),
   login: (username: string, password: string) => post<{ username: string }>(`${A}/login`, { username, password }),
   logout: () => post(`${A}/logout`),
   changePassword: (oldPassword: string, newPassword: string) => post(`${A}/password`, { oldPassword, newPassword }),

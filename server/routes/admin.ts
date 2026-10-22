@@ -5,10 +5,12 @@ import { randomBytes } from 'node:crypto'
 import { UPLOAD_DIR } from '../config.ts'
 import { hashPassword, verifyPassword } from '../crypto.ts'
 import {
-  all, getSite, listCategories, listChannels, listPosts, one, run, setSite, toProduct, tx, PRODUCT_SQL, type ProductRow,
+  all, getSetting, getSite, listCategories, listChannels, listPosts, one, run, setSetting, setSite, toProduct, tx, PRODUCT_SQL, type ProductRow,
 } from '../db.ts'
 import { closeOrder, deleteOrder, deliverLine, findOrder, markPaid, toOrder, type OrderRow } from '../orders.ts'
 import { cleanHtml } from '../sanitize.ts'
+import { mergePay, payConfig, payLocks, publicUrl, requestOrigin, type PayConfig } from '../settings.ts'
+import { checkSetupCode, clearSetupCode, createAdmin, needsSetup } from '../setup.ts'
 import { endSession, rateLimit, requireAdmin, revokeSessions, sessionOf, startSession } from '../security.ts'
 import { body, fail, hexColor, num, oneOf, password, round2, slug, str, url } from '../validate.ts'
 import type { AdminProduct, AdminStats, AdminUser } from '../../src/types.ts'
@@ -29,7 +31,28 @@ admin.post('/login', rateLimit('admin-login', 10, 900), async (c) => {
 admin.get('/me', (c) => {
   const id = sessionOf(c, 'admin')
   const a = id ? one<{ username: string }>('SELECT username FROM admins WHERE id = ?', id) : undefined
-  return c.json({ username: a?.username ?? null })
+  return c.json({ username: a?.username ?? null, needsSetup: needsSetup() })
+})
+
+// ---- 首次安装：凭服务器日志中的安装码创建管理员 ----
+
+admin.post('/setup', rateLimit('setup', 10, 900), async (c) => {
+  if (!needsSetup()) fail('已完成初始化，请直接登录', 409)
+  const b = await body(c)
+  if (!checkSetupCode(b.code)) fail('安装码错误，请查看服务器日志（docker compose logs）', 403)
+  const name = str(b.username, '用户名', 32)
+  if (!/^[\w.-]{3,32}$/.test(name)) fail('用户名为 3–32 位字母、数字、下划线、点或短横线')
+  const pwd = password(b.password, 8)
+  const id = tx(() => {
+    if (!needsSetup()) fail('已完成初始化，请直接登录', 409)
+    // 记录首次访问时的站点地址，作为支付回调地址的默认值
+    if (!getSetting('publicUrl', '')) setSetting('publicUrl', requestOrigin(c))
+    return createAdmin(name, pwd)
+  })
+  clearSetupCode()
+  startSession(c, 'admin', id)
+  console.log(`[setup] 已创建管理员 ${name}`)
+  return c.json({ username: name })
 })
 
 admin.post('/logout', (c) => {
@@ -369,6 +392,39 @@ admin.delete('/users/:id', (c) => {
     run('DELETE FROM users WHERE id = ?', id)
   })
   return c.json({ ok: true })
+})
+
+// ---- 支付网关设置 ----
+
+/** 密钥只返回是否已设置，不回传明文 */
+function paymentView(c: Parameters<typeof publicUrl>[0]) {
+  const p = payConfig()
+  return {
+    provider: p.provider, epayUrl: p.epayUrl, epayPid: p.epayPid, hasKey: !!p.epayKey,
+    publicUrl: publicUrl(c), notifyUrl: `${publicUrl(c)}/api/pay/epay/notify`, locks: payLocks(),
+  }
+}
+
+admin.get('/payment', (c) => c.json(paymentView(c)))
+
+admin.put('/payment', async (c) => {
+  const b = await body(c)
+  const saved = getSetting<Partial<PayConfig>>('payment', {})
+  const next: Partial<PayConfig> = {
+    provider: oneOf(b.provider, ['mock', 'epay'] as const, '支付模式'),
+    epayUrl: url(b.epayUrl, '网关地址').replace(/\/+$/, ''),
+    epayPid: str(b.epayPid, '商户号', 64, false),
+    // 留空表示不修改已保存的密钥
+    epayKey: typeof b.epayKey === 'string' && b.epayKey.trim() ? str(b.epayKey, '商户密钥', 256) : saved.epayKey ?? '',
+  }
+  const site = url(b.publicUrl, '站点地址').replace(/\/+$/, '')
+  // 按合并环境变量后的最终结果校验
+  const eff = mergePay(next)
+  if (eff.provider === 'epay' && (!eff.epayUrl || !eff.epayPid || !eff.epayKey)) fail('启用易支付需要填写网关地址、商户号和商户密钥')
+  setSetting('payment', next)
+  if (!payLocks().publicUrl) setSetting('publicUrl', site)
+  console.log(`[admin] 支付配置已更新：${eff.provider}`)
+  return c.json(paymentView(c))
 })
 
 // ---- 站点设置 ----

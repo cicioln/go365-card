@@ -1,7 +1,9 @@
 # 用法：
-#   使用 GitHub 构建好的镜像（推荐）：docker compose pull && docker compose up -d
-#   修改源码后本地构建：            docker compose up -d --build
-#   更新到最新版：                  docker compose pull && docker compose up -d
+#   启动：        docker compose up -d
+#   查看安装码：  docker compose logs
+#   更新到最新版：docker compose pull && docker compose up -d
+#   本地改源码后构建：docker compose up -d --build
+# 管理员账号、支付网关都在后台设置，一般不需要 .env；需要时参考 .env.example
 services:
   shop:
     image: ${IMAGE:-ghcr.io/cicioln/go365-card:latest}

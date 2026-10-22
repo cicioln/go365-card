@@ -11,6 +11,8 @@ import { prune as pruneCaptcha } from './captcha.ts'
 import { closeExpired } from './orders.ts'
 import { db } from './db.ts'
 import { pruneBuckets, pruneSessions } from './security.ts'
+import { payConfig } from './settings.ts'
+import { initSetup } from './setup.ts'
 import { pub } from './routes/public.ts'
 import { pay } from './routes/pay.ts'
 import { admin } from './routes/admin.ts'
@@ -25,7 +27,8 @@ app.use('*', secureHeaders({
     styleSrc: ["'self'", "'unsafe-inline'"],
     imgSrc: ["'self'", 'data:', 'https:'],
     connectSrc: ["'self'"],
-    formAction: ["'self'", ...(config.pay.epayUrl ? [config.pay.epayUrl] : [])],
+    // 支付网关在后台可随时修改，跳转网关使用 location.href 而非表单提交，这里只允许本站表单
+    formAction: ["'self'"],
     frameAncestors: ["'none'"],
     objectSrc: ["'none'"],
     baseUri: ["'self'"],
@@ -118,7 +121,7 @@ for (const sig of ['SIGTERM', 'SIGINT'] as const)
   })
 
 serve({ fetch: app.fetch, port: config.port }, () => {
-  console.log(`[server] http://localhost:${config.port}  支付模式：${config.pay.provider}${existsSync(DIST) ? '' : '（未找到 dist，只提供 API）'}`)
-  if (config.pay.provider === 'epay' && (!config.pay.epayUrl || !config.pay.epayPid || !config.pay.epayKey))
-    console.warn('[server] PAY_PROVIDER=epay 但 EPAY_URL / EPAY_PID / EPAY_KEY 未配置完整')
+  const pay = payConfig()
+  console.log(`[server] http://localhost:${config.port}  支付模式：${pay.provider === 'epay' ? '易支付' : '模拟支付（仅测试用，请在后台配置）'}${existsSync(DIST) ? '' : '（未找到 dist，只提供 API）'}`)
+  initSetup()
 })

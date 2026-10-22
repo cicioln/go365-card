@@ -3,6 +3,7 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import { getConnInfo } from '@hono/node-server/conninfo'
 import { config } from './config.ts'
 import { randomToken, sha256 } from './crypto.ts'
+import { cookieSecure } from './settings.ts'
 import { one, run } from './db.ts'
 import { fail } from './validate.ts'
 
@@ -17,7 +18,7 @@ export function startSession(c: Context, kind: Kind, subjectId: number, remember
   const ttl = kind === 'user' && remember ? 30 * 86400 : TTL[kind]
   run('INSERT INTO sessions (token_hash, kind, subject_id, expires_at) VALUES (?, ?, ?, ?)', sha256(token), kind, subjectId, Date.now() + ttl * 1000)
   setCookie(c, COOKIE[kind], token, {
-    httpOnly: true, sameSite: 'Lax', secure: config.cookieSecure, path: '/',
+    httpOnly: true, sameSite: 'Lax', secure: cookieSecure(c), path: '/',
     // 不勾选"记住我"时使用浏览器会话 Cookie
     ...(kind === 'user' && !remember ? {} : { maxAge: ttl }),
   })

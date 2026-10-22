@@ -2,11 +2,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { randomBytes } from 'node:crypto'
 import { resolve } from 'node:path'
 
+// 这里只放服务器级别的配置（端口、目录、代理等），从环境变量读取。
+// 支付网关、站点地址等业务配置在后台设置，见 settings.ts。
 const env = process.env
 
 /** 项目根目录（server/ 的上一级） */
 export const ROOT = resolve(import.meta.dirname, '..')
-export const DATA_DIR = resolve(ROOT, env.DATA_DIR ?? 'data')
+export const DATA_DIR = resolve(ROOT, env.DATA_DIR || 'data')
 export const UPLOAD_DIR = resolve(DATA_DIR, 'uploads')
 mkdirSync(UPLOAD_DIR, { recursive: true })
 
@@ -20,24 +22,11 @@ function loadSecret() {
   return secret
 }
 
-const port = Number(env.PORT) || 3000
-
 export const config = {
-  port,
-  /** 对外访问地址，用于生成支付回调 / 跳转地址 */
-  publicUrl: (env.PUBLIC_URL ?? `http://localhost:${port}`).replace(/\/$/, ''),
+  port: Number(env.PORT) || 3000,
   secret: loadSecret(),
-  /** 生产环境走 HTTPS 时设为 1 */
-  cookieSecure: env.COOKIE_SECURE === '1',
-  /** 位于 Nginx 等反向代理之后时设为 1，按 X-Forwarded-For 识别客户端 IP */
+  /** 位于 Nginx 等反向代理之后时设为 1，按 X-Forwarded-* 识别客户端 IP 与协议 */
   trustProxy: env.TRUST_PROXY === '1',
   /** 未支付订单的保留时间，超时自动关闭并释放库存 */
   orderTtlMinutes: Number(env.ORDER_TTL_MINUTES) || 15,
-  pay: {
-    /** mock：本地模拟收银台；epay：易支付协议 */
-    provider: env.PAY_PROVIDER === 'epay' ? 'epay' : 'mock',
-    epayUrl: (env.EPAY_URL ?? '').replace(/\/$/, ''),
-    epayPid: env.EPAY_PID ?? '',
-    epayKey: env.EPAY_KEY ?? '',
-  },
 } as const

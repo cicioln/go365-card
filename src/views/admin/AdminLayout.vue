@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   LayoutDashboard, Package, FolderTree, Receipt, FileText, CreditCard, Users, Settings,
-  LogOut, Menu, X, Sun, Moon, ExternalLink,
+  LogOut, Menu, X, Sun, Moon, ExternalLink, AlertTriangle,
 } from 'lucide-vue-next'
 import { useAdminStore } from '../../stores/admin'
 import { useUiStore } from '../../stores/ui'
@@ -16,6 +16,7 @@ const route = useRoute()
 const router = useRouter()
 const open = ref(false)
 watch(() => route.fullPath, () => (open.value = false))
+admin.refreshPayMode()
 
 const menu = [
   { to: '/admin', label: '仪表盘', icon: LayoutDashboard, exact: true },
@@ -80,6 +81,11 @@ async function logout() {
           <button class="btn-icon" aria-label="退出登录" @click="logout"><LogOut class="h-5 w-5" /></button>
         </div>
       </header>
+      <div v-if="admin.mockPay" role="alert" class="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 sm:px-6 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+        <AlertTriangle class="h-4 w-4 shrink-0" />
+        <span>当前为<b>模拟支付</b>，任何人都能免费"支付"并拿到卡密，正式营业前请配置真实支付网关。</span>
+        <RouterLink v-if="route.path !== '/admin/payments'" to="/admin/payments" class="font-semibold underline underline-offset-2">去配置</RouterLink>
+      </div>
       <main class="flex-1 p-4 sm:p-6">
         <!-- 按路径重建页面，避免 /products/42 与 /products/new 之间复用旧表单 -->
         <RouterView :key="route.path" />

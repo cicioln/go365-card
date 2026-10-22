@@ -5,6 +5,7 @@ import type { PaymentChannel } from '../../data/mock'
 import { adminApi } from '../../adminApi'
 import { useUiStore } from '../../stores/ui'
 import AdminModal from '../../components/admin/AdminModal.vue'
+import PaymentGateway from '../../components/admin/PaymentGateway.vue'
 import { errorText } from '../../http'
 
 const ui = useUiStore()
@@ -66,6 +67,7 @@ async function remove(c: PaymentChannel) {
 </script>
 
 <template>
+  <PaymentGateway class="mb-6" />
   <div class="card overflow-hidden">
     <div class="flex items-center p-4">
       <p class="text-sm text-zinc-500">停用的渠道不会出现在结算页</p>

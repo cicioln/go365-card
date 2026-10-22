@@ -4,6 +4,7 @@ import { hashPassword, queryHash, safeEqual, verifyOrderToken, verifyPassword } 
 import { all, findPost, getSite, listCategories, listChannels, listPosts, one, run, PRODUCT_SQL, toProduct, type ProductRow } from '../db.ts'
 import { createOrder, findOrder, toOrder, type OrderRow } from '../orders.ts'
 import { payUrl } from '../pay.ts'
+import { publicUrl } from '../settings.ts'
 import { endSession, rateLimit, sessionOf, startSession } from '../security.ts'
 import { body, email, fail, num, password, str } from '../validate.ts'
 
@@ -127,7 +128,7 @@ pub.post('/orders/:no/pay', rateLimit('pay', 30, 600), (c) => {
   if (!o || !canView(c, o)) fail('订单不存在或无权查看', 404)
   if (o.status !== 'pending') fail(o.status === 'closed' ? '订单已超时关闭，请重新下单' : '订单已支付')
   if (o.expires_at < Date.now()) fail('订单已超时关闭，请重新下单')
-  return c.json({ url: payUrl(o) })
+  return c.json({ url: payUrl(o, publicUrl(c)) })
 })
 
 /** 游客查单：订单号或邮箱 + 查单密码 */
