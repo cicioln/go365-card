@@ -7,6 +7,7 @@ import { getProduct, unitPriceFor } from '../api'
 import type { Product } from '../data/mock'
 import { useCartStore } from '../stores/cart'
 import { useUiStore } from '../stores/ui'
+import { useSiteStore } from '../stores/site'
 import ProductCover from '../components/ProductCover.vue'
 import { money, currencySymbol } from '../utils/money'
 
@@ -15,6 +16,7 @@ const route = useRoute()
 const router = useRouter()
 const cart = useCartStore()
 const ui = useUiStore()
+const site = useSiteStore()
 const product = ref<Product | null>(null)
 const loading = ref(true)
 const qty = ref(1)
@@ -22,6 +24,7 @@ const qty = ref(1)
 watchEffect(async () => {
   loading.value = true
   product.value = await getProduct(String(route.params.slug))
+  if (product.value) site.detail = { title: product.value.title, description: product.value.description }
   qty.value = 1
   loading.value = false
 })

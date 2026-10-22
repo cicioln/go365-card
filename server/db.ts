@@ -175,7 +175,8 @@ export const setSetting = (key: string, value: unknown) =>
   run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value', key, JSON.stringify(value))
 
 export function getSite(): SiteConfig {
-  const site = { ...seed.siteConfig, ...getSetting<Partial<SiteConfig>>('site', {}) }
+  const saved = getSetting<Partial<SiteConfig>>('site', {})
+  const site = { ...seed.siteConfig, ...saved, seo: { ...seed.siteConfig.seo, ...saved.seo } }
   // 旧版演示数据写入的占位链接视为未配置
   if (/^https?:\/\/t\.me\/?$/i.test(site.telegram)) site.telegram = ''
   return site

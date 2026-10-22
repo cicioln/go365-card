@@ -181,7 +181,6 @@ const pillOff = 'border-black/5 bg-white text-zinc-700 hover:border-brand/30 hov
           <p class="mt-1 text-sm text-zinc-500">{{ t('home.newsSub') }}</p>
         </div>
         <div class="flex shrink-0 gap-3 text-sm font-semibold text-zinc-500">
-          <RouterLink to="/blog" class="hover:text-brand">{{ t('nav.blog') }}</RouterLink>
           <RouterLink to="/notice" class="hover:text-brand">{{ t('nav.notice') }}</RouterLink>
         </div>
       </div>

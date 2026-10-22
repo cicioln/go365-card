@@ -13,6 +13,8 @@ import { epayReady, mergePay, MOCK_ALLOWED, payConfig, payLocks, publicUrl, requ
 import { checkSetupCode, clearSetupCode, createAdmin, needsSetup } from '../setup.ts'
 import { endSession, rateLimit, requireAdmin, revokeSessions, sessionOf, startSession } from '../security.ts'
 import { CHAIN_KEYS, checkAddress } from '../usdt.ts'
+import { SEO_PAGES } from '../../src/utils/seo.ts'
+import type { SeoConfig } from '../../src/data/mock.ts'
 import { body, fail, hexColor, num, oneOf, password, round2, slug, str, url } from '../validate.ts'
 import type { AdminProduct, AdminStats, AdminUser } from '../../src/types.ts'
 
@@ -438,6 +440,20 @@ admin.put('/payment', async (c) => {
 
 // ---- 站点设置 ----
 
+function parseSeo(v: unknown): SeoConfig {
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>
+  const raw = (o.pages && typeof o.pages === 'object' ? o.pages : {}) as Record<string, Record<string, unknown> | undefined>
+  const pages: SeoConfig['pages'] = {}
+  for (const p of SEO_PAGES) {
+    const title = str(raw[p.key]?.title, `${p.label}标题`, 80, false)
+    const description = str(raw[p.key]?.description, `${p.label}描述`, 300, false)
+    if (title || description) pages[p.key] = { title, description }
+  }
+  const titleTemplate = str(o.titleTemplate, '标题模板', 80, false)
+  if (titleTemplate && !titleTemplate.includes('{title}')) fail('标题模板需包含 {title}')
+  return { titleTemplate, keywords: str(o.keywords, '关键词', 300, false), pages }
+}
+
 admin.get('/site', (c) => c.json(getSite()))
 
 admin.put('/site', async (c) => {
@@ -445,7 +461,7 @@ admin.put('/site', async (c) => {
   const site = {
     siteName: str(b.siteName, '站点名称', 60), description: str(b.description, '站点描述', 200, false),
     telegram: url(b.telegram, 'Telegram 链接'), currency: oneOf(b.currency, ['CNY', 'USD'] as const, '货币'),
-    logo: imageUrl(b.logo, 'Logo'), favicon: imageUrl(b.favicon, '标签图标'),
+    logo: imageUrl(b.logo, 'Logo'), favicon: imageUrl(b.favicon, '标签图标'), seo: parseSeo(b.seo),
   }
   setSite(site)
   return c.json(site)

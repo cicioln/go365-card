@@ -4,15 +4,19 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { getPost } from '../api'
 import type { Post } from '../data/mock'
+import { useSiteStore } from '../stores/site'
+import { plainText } from '../utils/seo'
 
 const { t } = useI18n()
 const route = useRoute()
+const site = useSiteStore()
 const post = ref<Post | null>(null)
 const loading = ref(true)
 
 watchEffect(async () => {
   loading.value = true
   post.value = await getPost(String(route.params.slug))
+  if (post.value) site.detail = { title: post.value.title, description: post.value.summary || plainText(post.value.content) }
   loading.value = false
 })
 </script>

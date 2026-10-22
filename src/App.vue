@@ -1,23 +1,46 @@
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
+import { computed, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUiStore } from './stores/ui'
 import { useSiteStore } from './stores/site'
 import AppHeader from './components/AppHeader.vue'
 import AppFooter from './components/AppFooter.vue'
+import { resolveMeta } from './utils/seo'
 
 const ui = useUiStore()
 const route = useRoute()
 const blank = computed(() => route.meta.layout === 'blank')
 
-// 浏览器标签标题与 meta 描述跟随站点设置
+// 浏览器标签标题与 meta 描述、关键词跟随后台 SEO 设置
 const db = useSiteStore()
+// 离开详情页时清掉详情标题
+watch(() => route.path, () => (db.detail = null))
+
+function setMeta(attr: 'name' | 'property', key: string, content: string) {
+  let el = document.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`)
+  if (!content) return el?.remove()
+  if (!el) {
+    el = document.createElement('meta')
+    el.setAttribute(attr, key)
+    document.head.appendChild(el)
+  }
+  el.content = content
+}
+
 watchEffect(() => {
   const name = db.site.siteName || 'Go365 Card'
-  const page = route.meta.title as string | undefined
-  if (route.path.startsWith('/admin')) document.title = `${page ? page + ' - ' : ''}${name} 后台`
-  else document.title = page ? `${page} - ${name}` : name
-  document.querySelector('meta[name="description"]')?.setAttribute('content', db.site.description || name)
+  if (route.path.startsWith('/admin')) {
+    const page = route.meta.title as string | undefined
+    document.title = `${page ? page + ' - ' : ''}${name} 后台`
+    return
+  }
+  const meta = resolveMeta(db.site, route.path, db.detail)
+  document.title = meta.title
+  setMeta('name', 'description', meta.description)
+  setMeta('name', 'keywords', meta.keywords)
+  setMeta('name', 'robots', meta.noindex ? 'noindex' : '')
+  setMeta('property', 'og:title', meta.title)
+  setMeta('property', 'og:description', meta.description)
 })
 
 // 浏览器标签图标：优先后台设置的图标，其次 Logo，最后默认 Logo

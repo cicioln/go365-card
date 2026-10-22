@@ -8,7 +8,6 @@ const db = useSiteStore()
 const links = [
   { to: '/', key: 'home' },
   { to: '/products', key: 'products' },
-  { to: '/blog', key: 'blog' },
   { to: '/notice', key: 'notice' },
   { to: '/about', key: 'about' },
   { to: '/guest/orders', key: 'guestOrders' },
@@ -45,12 +44,8 @@ const links = [
         </nav>
       </div>
 
-      <div class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-black/5 pt-6 text-xs text-zinc-500 dark:border-white/10">
+      <div class="mt-8 border-t border-black/5 pt-6 text-xs text-zinc-500 dark:border-white/10">
         <p>© {{ new Date().getFullYear() }} {{ db.site.siteName }}. {{ t('footer.rights') }}</p>
-        <div class="flex gap-4">
-          <RouterLink to="/privacy" class="hover:text-zinc-900 dark:hover:text-white">{{ t('footer.privacy') }}</RouterLink>
-          <RouterLink to="/terms" class="hover:text-zinc-900 dark:hover:text-white">{{ t('footer.terms') }}</RouterLink>
-        </div>
       </div>
     </div>
   </footer>

@@ -9,7 +9,8 @@ import { relative, resolve } from 'node:path'
 import { config, MODE, ROOT, UPLOAD_DIR } from './config.ts'
 import { prune as pruneCaptcha } from './captcha.ts'
 import { closeExpired } from './orders.ts'
-import { db, getSite } from './db.ts'
+import { db, findPost, getSite, one } from './db.ts'
+import { plainText, resolveMeta, type DetailMeta } from '../src/utils/seo.ts'
 import { pruneBuckets, pruneSessions } from './security.ts'
 import { epayReady, payConfig } from './settings.ts'
 import { pollUsdt } from './usdt.ts'
@@ -91,14 +92,50 @@ if (existsSync(DIST)) {
     root: relative(process.cwd(), DIST),
     onFound: (_p, c) => c.header('Cache-Control', 'public, max-age=31536000, immutable'),
   }))
-  // 首屏就输出后台设置的标签图标，避免先闪默认图标
+  // 首屏就输出后台设置的标题、描述、关键词和标签图标：搜索引擎不执行 JS 也能拿到，且不会先闪默认图标
   const esc = (s: string) => s.replace(/[&"<>]/g, (ch) => `&#${ch.charCodeAt(0)};`)
+  const [head, rest] = indexHtml.split('</head>')
+  const baseHead = head
+    .replace(/\s*<title>[\s\S]*?<\/title>/, '')
+    .replace(/\s*<meta name="description"[^>]*>/, '')
+    .replace(/\s*<link rel="icon"[^>]*>/, '')
+  /** 商品、文章详情页按 slug 查标题和描述 */
+  const detailOf = (path: string): DetailMeta | null => {
+    const m = /^\/(products|posts)\/([^/]+)\/?$/.exec(path)
+    if (!m) return null
+    const slug = decodeURIComponent(m[2])
+    if (m[1] === 'products') {
+      const p = one<{ title: string; description: string }>('SELECT title, description FROM products WHERE slug = ?', slug)
+      return p ? { title: p.title, description: p.description } : null
+    }
+    const p = findPost(slug)
+    return p && { title: p.title, description: p.summary || plainText(p.content) }
+  }
   const renderIndex = (c: Context) => {
     const site = getSite()
-    const icon = site.favicon || site.logo
-    return c.html(icon ? indexHtml.replace('<link rel="icon" type="image/svg+xml" href="/logo.svg" />', `<link rel="icon" href="${esc(icon)}" />`) : indexHtml)
+    const path = c.req.path
+    let detail: DetailMeta | null = null
+    try {
+      detail = detailOf(path)
+    } catch {
+      /* 非法的 URL 编码，按普通页面处理 */
+    }
+    const meta = resolveMeta(site, path, detail)
+    const icon = site.favicon || site.logo || '/logo.svg'
+    const tags = [
+      `<title>${esc(meta.title)}</title>`,
+      `<meta name="description" content="${esc(meta.description)}" />`,
+      meta.keywords && `<meta name="keywords" content="${esc(meta.keywords)}" />`,
+      meta.noindex && '<meta name="robots" content="noindex" />',
+      `<meta property="og:site_name" content="${esc(site.siteName)}" />`,
+      `<meta property="og:title" content="${esc(meta.title)}" />`,
+      `<meta property="og:description" content="${esc(meta.description)}" />`,
+      `<meta property="og:type" content="${detail ? 'article' : 'website'}" />`,
+      `<link rel="icon" href="${esc(icon)}" />`,
+    ].filter(Boolean)
+    return c.html(`${baseHead}\n    ${tags.join('\n    ')}\n  </head>${rest}`)
   }
-  // index.html 不能交给静态中间件直接返回，否则拿不到自定义图标
+  // index.html 不能交给静态中间件直接返回，否则拿不到后台设置的 SEO 信息
   app.get('/', renderIndex)
   app.get('/index.html', renderIndex)
   app.use('*', serveStatic({ root: relative(process.cwd(), DIST) }))

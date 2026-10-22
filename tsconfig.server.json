@@ -15,5 +15,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["server/**/*.ts", "src/data/mock.ts", "src/types.ts", "src/utils/pricing.ts"]
+  "include": ["server/**/*.ts", "src/data/mock.ts", "src/types.ts", "src/utils/pricing.ts", "src/utils/seo.ts"]
 }

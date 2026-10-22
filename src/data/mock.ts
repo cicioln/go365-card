@@ -60,6 +60,18 @@ export interface SiteConfig {
   logo: string
   /** 浏览器标签图标，留空则使用 Logo */
   favicon: string
+  seo: SeoConfig
+}
+
+export type SeoPageKey = 'home' | 'products' | 'notice' | 'about' | 'guestOrders' | 'cart'
+
+export interface SeoConfig {
+  /** 标题模板，{title} 为页面标题，{site} 为站点名称；留空为「{title} - {site}」 */
+  titleTemplate: string
+  /** meta keywords，逗号分隔 */
+  keywords: string
+  /** 各页面的标题和描述，留空使用默认值 */
+  pages: Partial<Record<SeoPageKey, { title: string; description: string }>>
 }
 
 export const siteConfig: SiteConfig = {
@@ -70,6 +82,7 @@ export const siteConfig: SiteConfig = {
   currency: 'CNY',
   logo: '',
   favicon: '',
+  seo: { titleTemplate: '', keywords: '', pages: {} },
 }
 
 export const categories: Category[] = [

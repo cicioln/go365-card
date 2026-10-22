@@ -18,7 +18,7 @@ export const router = createRouter({
     { path: '/auth/login', component: () => import('./views/Auth.vue'), props: { mode: 'login' } },
     { path: '/auth/register', component: () => import('./views/Auth.vue'), props: { mode: 'register' } },
     { path: '/me', component: () => import('./views/Me.vue'), meta: { auth: true } },
-    { path: '/blog', component: () => import('./views/Posts.vue'), props: { type: 'blog' } },
+    { path: '/blog', redirect: '/notice' },
     { path: '/notice', component: () => import('./views/Posts.vue'), props: { type: 'notice' } },
     { path: '/posts/:slug', component: () => import('./views/PostDetail.vue') },
     { path: '/about', component: () => import('./views/Static.vue'), props: { page: 'about' } },

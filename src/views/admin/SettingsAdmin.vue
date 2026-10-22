@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { SiteConfig } from '../../data/mock'
+import type { SeoPageKey, SiteConfig } from '../../data/mock'
+import { DEFAULT_TITLE_TEMPLATE, SEO_PAGES, resolveMeta } from '../../utils/seo'
 import { adminApi } from '../../adminApi'
 import { DEFAULT_LOGO, useSiteStore } from '../../stores/site'
 import ImageUpload from '../../components/admin/ImageUpload.vue'
@@ -20,22 +21,34 @@ const newPwd = ref('')
 const pwdError = ref('')
 const busy = ref(false)
 
+// SEO：每个页面都给出 title/description 两个输入框，留空用默认值
+const seoPages = ref(Object.fromEntries(SEO_PAGES.map((p) => [p.key, { title: '', description: '' }])) as Record<SeoPageKey, { title: string; description: string }>)
+const seoError = ref('')
+function fillSeo() {
+  for (const p of SEO_PAGES) seoPages.value[p.key] = { title: '', description: '', ...site.value.seo?.pages?.[p.key] }
+}
+/** 预览：用当前输入计算出的最终标题 */
+const seoPreview = (path: string) => resolveMeta({ ...site.value, seo: { ...site.value.seo, pages: seoPages.value } }, path)
+
 onMounted(async () => {
   try {
     site.value = await adminApi.site()
+    fillSeo()
   } catch (e) {
     siteError.value = errorText(e)
   }
 })
 
-async function saveSite() {
-  siteError.value = ''
+async function saveSite(which: 'site' | 'seo' = 'site') {
+  const err = which === 'site' ? siteError : seoError
+  err.value = ''
   busy.value = true
   try {
-    siteStore.site = await adminApi.saveSite(site.value)
-    ui.notify('站点设置已保存')
+    siteStore.site = site.value = await adminApi.saveSite({ ...site.value, seo: { ...site.value.seo, pages: seoPages.value } })
+    fillSeo()
+    ui.notify(which === 'site' ? '站点设置已保存' : 'SEO 设置已保存')
   } catch (e) {
-    siteError.value = errorText(e)
+    err.value = errorText(e)
   } finally {
     busy.value = false
   }
@@ -56,7 +69,7 @@ async function changePwd() {
 
 <template>
   <div class="grid gap-6 xl:grid-cols-2">
-    <form class="card space-y-4 p-6" @submit.prevent="saveSite">
+    <form class="card space-y-4 p-6" @submit.prevent="saveSite('site')">
       <h2 class="font-bold">站点信息</h2>
       <div><label class="label" for="s-name">站点名称</label><input id="s-name" v-model="site.siteName" class="input" required /></div>
       <div><label class="label" for="s-desc">站点描述</label><input id="s-desc" v-model="site.description" class="input" /></div>
@@ -95,6 +108,56 @@ async function changePwd() {
       <div><label class="label" for="s-new">新密码（至少 8 位）</label><input id="s-new" v-model="newPwd" type="password" autocomplete="new-password" class="input" required /></div>
       <p v-if="pwdError" role="alert" class="text-sm text-red-500">{{ pwdError }}</p>
       <button class="btn-primary">修改密码</button>
+    </form>
+
+    <form class="card space-y-5 p-6 xl:col-span-2" @submit.prevent="saveSite('seo')">
+      <div>
+        <h2 class="font-bold">SEO 设置</h2>
+        <p class="mt-1 text-xs text-zinc-400">
+          网页标题、描述和关键词会直接写进页面 HTML，搜索引擎和分享卡片可以读取。所有项都可以留空，留空时使用默认值。
+          商品和文章详情页会自动使用商品标题/简介、文章标题/摘要。
+        </p>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="label" for="seo-tpl">标题模板</label>
+          <input id="seo-tpl" v-model="site.seo.titleTemplate" class="input font-mono" :placeholder="DEFAULT_TITLE_TEMPLATE" />
+          <p class="mt-1.5 text-xs text-zinc-400"><code>{title}</code> 为页面标题，<code>{site}</code> 为站点名称；首页不套模板</p>
+        </div>
+        <div>
+          <label class="label" for="seo-kw">关键词（keywords）</label>
+          <input id="seo-kw" v-model="site.seo.keywords" class="input" placeholder="例如：ChatGPT Plus, Claude Pro, 自动发货" />
+          <p class="mt-1.5 text-xs text-zinc-400">逗号分隔，全站共用</p>
+        </div>
+      </div>
+
+      <div class="overflow-hidden rounded-xl border border-black/5 dark:border-white/10">
+        <div class="hidden grid-cols-[7rem_1fr_1.4fr] gap-3 bg-zinc-50 px-4 py-2 text-xs font-semibold text-zinc-500 md:grid dark:bg-zinc-900">
+          <span>页面</span><span>标题（title）</span><span>描述（description）</span>
+        </div>
+        <div
+          v-for="p in SEO_PAGES"
+          :key="p.key"
+          class="grid gap-2 border-t border-black/5 px-4 py-3 first:border-t-0 md:grid-cols-[7rem_1fr_1.4fr] md:gap-3 md:first:border-t dark:border-white/10"
+        >
+          <div class="text-sm">
+            <p class="font-semibold">{{ p.label }}</p>
+            <p class="font-mono text-xs text-zinc-400">{{ p.path }}</p>
+          </div>
+          <div>
+            <label class="sr-only" :for="`seo-t-${p.key}`">{{ p.label }}标题</label>
+            <input :id="`seo-t-${p.key}`" v-model="seoPages[p.key].title" class="input py-2 text-sm" :placeholder="p.title || site.siteName" maxlength="80" />
+            <p class="mt-1 truncate text-xs text-zinc-400" :title="seoPreview(p.path).title">显示为：{{ seoPreview(p.path).title }}</p>
+          </div>
+          <div>
+            <label class="sr-only" :for="`seo-d-${p.key}`">{{ p.label }}描述</label>
+            <textarea :id="`seo-d-${p.key}`" v-model="seoPages[p.key].description" rows="2" class="input py-2 text-sm" :placeholder="site.description || '留空使用站点描述'" maxlength="300" />
+          </div>
+        </div>
+      </div>
+
+      <p v-if="seoError" role="alert" class="text-sm text-red-500">{{ seoError }}</p>
+      <button class="btn-primary" :disabled="busy">保存 SEO 设置</button>
     </form>
   </div>
 </template>

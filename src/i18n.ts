@@ -2,9 +2,9 @@ import { createI18n } from 'vue-i18n'
 import { load } from './stores/storage'
 
 const zh = {
-  nav: { home: '首页', products: '商品中心', blog: '博客', notice: '公告', about: '关于', cart: '购物车', guestOrders: '游客查单', login: '登录', me: '个人中心', logout: '退出' },
+  nav: { home: '首页', products: '商品中心', blog: '博客', notice: '公告', about: '关于', cart: '购物车', guestOrders: '订单查询', login: '登录', me: '个人中心', logout: '退出' },
   home: {
-    notice: '网站公告', detail: '查看详情', selfQuery: '自助查单', noLogin: '无需登录', tg: 'TG 售后群', official: '官方售后',
+    notice: '网站公告', detail: '查看详情', selfQuery: '订单查询', noLogin: '无需登录', tg: 'TG 售后群', official: '官方售后',
     all: '全部', news: '最新动态', newsSub: '随时掌握我们的最新消息和公告', readMore: '阅读更多',
     heroSub: '数字商品自动发货，下单即用', hot: '热门商品', hotSub: '精选商品，库存实时更新', viewAll: '查看全部',
     perkAuto: '自动发货', perkAutoSub: '付款后秒发卡密', perk24: '7×24 小时', perk24Sub: '全天候自助下单',
@@ -18,7 +18,7 @@ const zh = {
   },
   cart: { title: '购物车', empty: '购物车是空的', go: '去逛逛', total: '合计', checkout: '去结算', remove: '删除', unit: '单价' },
   checkout: {
-    title: '确认订单', email: '接收邮箱', emailPh: '用于接收卡密和查单', password: '查单密码', passwordPh: '游客查单时使用，至少 4 位',
+    title: '确认订单', email: '接收邮箱', emailPh: '用于接收卡密和查单', password: '查单密码', passwordPh: '查询订单时使用，至少 4 位',
     channel: '支付方式', fee: '手续费', pay: '提交订单', amount: '应付金额', invalidEmail: '请输入有效邮箱', invalidPwd: '查单密码至少 4 位', noChannel: '暂无可用的支付方式，请联系客服',
   },
   order: {
@@ -26,7 +26,7 @@ const zh = {
     closed: '已关闭', payNow: '去支付', cards: '卡密', copy: '复制', copied: '已复制', notFound: '订单不存在',
     copyAll: '复制全部', exportTxt: '导出 TXT', cardCount: '共 {n} 条', copyFail: '复制失败，请手动选择文本复制',
     payHint: '请在 {time} 前完成支付，超时订单将自动关闭', closedHint: '订单已超时关闭，库存已释放。如已付款请联系客服。',
-    saveHint: '请妥善保存。凭此页面链接或「游客查单」可再次查看。',
+    saveHint: '请妥善保存。凭此页面链接或「订单查询」可再次查看。',
     waitManual: '已支付，订单中含人工发货商品，客服处理后会在此显示发货内容，页面会自动刷新。',
   },
   usdt: {
@@ -37,7 +37,7 @@ const zh = {
     deadline: '请在 {time} 前完成转账',
     waiting: '等待链上到账，确认后自动发货，页面会自动刷新',
   },
-  guest: { title: '游客查单', sub: '输入订单号或邮箱与查单密码查询订单', keyword: '订单号 / 邮箱', password: '查单密码', query: '查询', none: '未找到匹配的订单' },
+  guest: { title: '订单查询', sub: '输入订单号或邮箱与查单密码查询订单', keyword: '订单号 / 邮箱', password: '查单密码', query: '查询', none: '未找到匹配的订单' },
   auth: {
     login: '用户登录', loginSub: '欢迎回来，继续你的订单流程。', register: '注册账号', registerSub: '创建账号，管理你的订单。',
     email: '邮箱', emailPh: '请输入邮箱', password: '密码', passwordPh: '请输入密码', captcha: '验证码', captchaPh: '请输入图片验证码',

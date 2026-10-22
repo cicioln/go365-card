@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
-  Home, LayoutGrid, Newspaper, Bell, Info, ShoppingCart, ClipboardList, LogIn, Moon, Sun, Languages, Menu, X, User, LogOut,
+  Home, LayoutGrid, Bell, Info, ShoppingCart, ClipboardList, LogIn, Moon, Sun, Languages, Menu, X, User, LogOut,
 } from 'lucide-vue-next'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
@@ -22,7 +22,6 @@ const open = ref(false)
 const nav = [
   { to: '/', key: 'home', icon: Home },
   { to: '/products', key: 'products', icon: LayoutGrid },
-  { to: '/blog', key: 'blog', icon: Newspaper },
   { to: '/notice', key: 'notice', icon: Bell },
   { to: '/about', key: 'about', icon: Info },
 ]
