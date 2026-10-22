@@ -1,11 +1,17 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { SiteConfig } from '../data/mock'
 import { getSite } from '../api'
 
+/** 默认 Logo（黑色线条，深色模式下需反色） */
+export const DEFAULT_LOGO = '/logo.svg'
+
 /** 站点设置（名称、描述、货币等），启动时从服务端加载 */
 export const useSiteStore = defineStore('site', () => {
-  const site = ref<SiteConfig>({ siteName: 'Go365 Card', description: '', telegram: '', currency: 'CNY' })
+  const site = ref<SiteConfig>({ siteName: 'Go365 Card', description: '', telegram: '', currency: 'CNY', logo: '', favicon: '' })
+
+  /** 当前 Logo；custom 为 true 时是后台上传的图片，深色模式下不反色 */
+  const logo = computed(() => ({ src: site.value.logo || DEFAULT_LOGO, custom: !!site.value.logo }))
 
   async function load() {
     try {
@@ -15,5 +21,5 @@ export const useSiteStore = defineStore('site', () => {
     }
   }
 
-  return { site, load }
+  return { site, logo, load }
 })

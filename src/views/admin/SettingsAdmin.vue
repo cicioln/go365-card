@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { SiteConfig } from '../../data/mock'
 import { adminApi } from '../../adminApi'
-import { useSiteStore } from '../../stores/site'
+import { DEFAULT_LOGO, useSiteStore } from '../../stores/site'
+import ImageUpload from '../../components/admin/ImageUpload.vue'
 import { useUiStore } from '../../stores/ui'
 import { errorText } from '../../http'
 
@@ -10,6 +11,9 @@ const siteStore = useSiteStore()
 const ui = useUiStore()
 
 const site = ref<SiteConfig>({ ...siteStore.site })
+// ImageUpload 移除图片时给 undefined，这里统一转成空串
+const logo = computed({ get: () => site.value.logo || undefined, set: (v) => (site.value.logo = v ?? '') })
+const favicon = computed({ get: () => site.value.favicon || undefined, set: (v) => (site.value.favicon = v ?? '') })
 const siteError = ref('')
 const oldPwd = ref('')
 const newPwd = ref('')
@@ -56,6 +60,24 @@ async function changePwd() {
       <h2 class="font-bold">站点信息</h2>
       <div><label class="label" for="s-name">站点名称</label><input id="s-name" v-model="site.siteName" class="input" required /></div>
       <div><label class="label" for="s-desc">站点描述</label><input id="s-desc" v-model="site.description" class="input" /></div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <span class="label">网站 Logo</span>
+          <div class="mb-2 flex h-16 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800">
+            <img :src="site.logo || DEFAULT_LOGO" alt="Logo 预览" class="h-10 w-10 rounded-md object-contain" :class="{ 'dark:invert': !site.logo }" />
+          </div>
+          <ImageUpload v-model="logo" raw label="上传 Logo" hint="建议正方形透明 PNG，≤ 3MB" />
+          <p class="mt-1.5 text-xs text-zinc-400">显示在页头、页脚和后台，留空使用默认 Logo</p>
+        </div>
+        <div>
+          <span class="label">浏览器标签图标</span>
+          <div class="mb-2 flex h-16 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800">
+            <img :src="site.favicon || site.logo || DEFAULT_LOGO" alt="图标预览" class="h-8 w-8 rounded object-contain" :class="{ 'dark:invert': !site.favicon && !site.logo }" />
+          </div>
+          <ImageUpload v-model="favicon" raw label="上传图标" hint="建议 64×64 正方形 PNG" />
+          <p class="mt-1.5 text-xs text-zinc-400">留空则使用网站 Logo</p>
+        </div>
+      </div>
       <div><label class="label" for="s-tg">Telegram 群链接</label><input id="s-tg" v-model="site.telegram" type="url" class="input" placeholder="https://t.me/xxx" /><p class="mt-1.5 text-xs text-zinc-400">留空则前台不显示 TG 交流群入口</p></div>
       <div>
         <label class="label" for="s-cur">货币</label>

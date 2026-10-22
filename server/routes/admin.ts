@@ -130,12 +130,13 @@ function adminProduct(id: number): AdminProduct | null {
 
 admin.get('/products/:id', (c) => c.json(adminProduct(Number(c.req.param('id'))) ?? fail('商品不存在', 404)))
 
-/** 封面图只允许站内上传的地址或 https 外链 */
-const coverImage = (v: unknown) => {
-  const s = str(v, '封面图片', 500, false)
-  if (s && !/^\/uploads\/[\w-]+\.(webp|jpg|png|gif)$/.test(s) && !/^https:\/\/\S+$/.test(s)) fail('封面图片地址无效')
-  return s || undefined
+/** 图片只允许站内上传的地址或 https 外链 */
+const imageUrl = (v: unknown, name: string) => {
+  const s = str(v, name, 500, false)
+  if (s && !/^\/uploads\/[\w-]+\.(webp|jpg|png|gif)$/.test(s) && !/^https:\/\/\S+$/.test(s)) fail(`${name}地址无效`)
+  return s
 }
+const coverImage = (v: unknown) => imageUrl(v, '封面图片') || undefined
 
 function parseProduct(b: Record<string, unknown>) {
   const fulfillment = oneOf(b.fulfillment, ['auto', 'manual'] as const, '发货方式')
@@ -444,6 +445,7 @@ admin.put('/site', async (c) => {
   const site = {
     siteName: str(b.siteName, '站点名称', 60), description: str(b.description, '站点描述', 200, false),
     telegram: url(b.telegram, 'Telegram 链接'), currency: oneOf(b.currency, ['CNY', 'USD'] as const, '货币'),
+    logo: imageUrl(b.logo, 'Logo'), favicon: imageUrl(b.favicon, '标签图标'),
   }
   setSite(site)
   return c.json(site)

@@ -6,6 +6,15 @@ import { adminApi } from '../../adminApi'
 import { errorText } from '../../http'
 
 const model = defineModel<string | undefined>()
+const props = withDefaults(
+  defineProps<{
+    label?: string
+    hint?: string
+    /** 不压缩直接上传（Logo、图标需保留透明背景） */
+    raw?: boolean
+  }>(),
+  { label: '点击或拖拽上传封面图', hint: 'PNG / JPG / WebP / GIF，≤ 5MB，建议 16:10', raw: false },
+)
 
 const input = ref<HTMLInputElement>()
 const dragging = ref(false)
@@ -19,7 +28,8 @@ async function handle(file?: File) {
   busy.value = true
   try {
     // 浏览器端压缩后上传到服务器，只保存图片地址
-    const { blob, name } = await compressImage(file)
+    if (props.raw && file.size > 3 * 1024 * 1024) throw new Error('图片不能超过 3MB')
+    const { blob, name } = props.raw ? { blob: file, name: file.name } : await compressImage(file)
     model.value = (await adminApi.upload(blob, name)).url
     size.value = Math.round(blob.size / 1024)
   } catch (e) {
@@ -59,10 +69,10 @@ const size = ref(0)
     >
       <Loader2 v-if="busy" class="h-6 w-6 animate-spin" />
       <ImagePlus v-else class="h-6 w-6" />
-      <span class="font-medium">点击或拖拽上传封面图</span>
-      <span class="text-xs text-zinc-400">PNG / JPG / WebP / GIF，≤ 5MB，建议 16:10</span>
+      <span class="font-medium">{{ label }}</span>
+      <span class="text-xs text-zinc-400">{{ hint }}</span>
     </button>
-    <p v-if="model && size" class="mt-1.5 text-xs text-zinc-400">已压缩为 {{ size }} KB 并上传</p>
+    <p v-if="model && size" class="mt-1.5 text-xs text-zinc-400">{{ raw ? `已上传（${size} KB）` : `已压缩为 ${size} KB 并上传` }}</p>
     <p v-if="error" role="alert" class="mt-1.5 text-sm text-red-500">{{ error }}</p>
   </div>
 </template>

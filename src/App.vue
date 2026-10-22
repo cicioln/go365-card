@@ -19,6 +19,20 @@ watchEffect(() => {
   else document.title = page ? `${page} - ${name}` : name
   document.querySelector('meta[name="description"]')?.setAttribute('content', db.site.description || name)
 })
+
+// 浏览器标签图标：优先后台设置的图标，其次 Logo，最后默认 Logo
+watchEffect(() => {
+  const href = db.site.favicon || db.logo.src
+  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'icon'
+    document.head.appendChild(link)
+  }
+  if (link.getAttribute('href') === href) return
+  link.removeAttribute('type')
+  link.href = href
+})
 </script>
 
 <template>

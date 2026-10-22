@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { HTTPException } from 'hono/http-exception'
@@ -9,7 +9,7 @@ import { relative, resolve } from 'node:path'
 import { config, MODE, ROOT, UPLOAD_DIR } from './config.ts'
 import { prune as pruneCaptcha } from './captcha.ts'
 import { closeExpired } from './orders.ts'
-import { db } from './db.ts'
+import { db, getSite } from './db.ts'
 import { pruneBuckets, pruneSessions } from './security.ts'
 import { epayReady, payConfig } from './settings.ts'
 import { pollUsdt } from './usdt.ts'
@@ -91,8 +91,18 @@ if (existsSync(DIST)) {
     root: relative(process.cwd(), DIST),
     onFound: (_p, c) => c.header('Cache-Control', 'public, max-age=31536000, immutable'),
   }))
+  // 首屏就输出后台设置的标签图标，避免先闪默认图标
+  const esc = (s: string) => s.replace(/[&"<>]/g, (ch) => `&#${ch.charCodeAt(0)};`)
+  const renderIndex = (c: Context) => {
+    const site = getSite()
+    const icon = site.favicon || site.logo
+    return c.html(icon ? indexHtml.replace('<link rel="icon" type="image/svg+xml" href="/logo.svg" />', `<link rel="icon" href="${esc(icon)}" />`) : indexHtml)
+  }
+  // index.html 不能交给静态中间件直接返回，否则拿不到自定义图标
+  app.get('/', renderIndex)
+  app.get('/index.html', renderIndex)
   app.use('*', serveStatic({ root: relative(process.cwd(), DIST) }))
-  app.get('*', (c) => c.html(indexHtml))
+  app.get('*', renderIndex)
 }
 
 // 定时任务：关闭超时订单、清理过期会话与限流记录

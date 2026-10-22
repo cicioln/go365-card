@@ -21,7 +21,7 @@ const links = [
       <div class="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
         <div class="max-w-sm">
           <div class="flex items-center gap-2.5">
-            <img src="/logo.svg" alt="" class="h-8 w-8 dark:invert" />
+            <img :src="db.logo.src" alt="" class="h-8 w-8 rounded-md object-contain" :class="{ 'dark:invert': !db.logo.custom }" />
             <span class="text-lg font-bold">{{ db.site.siteName }}</span>
           </div>
           <p v-if="db.site.description" class="mt-3 text-sm leading-relaxed text-zinc-500">{{ db.site.description }}</p>

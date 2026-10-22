@@ -50,7 +50,7 @@ const active = '!bg-brand-soft !text-brand dark:!bg-brand/20'
         to="/"
         class="flex min-w-0 items-center gap-2 rounded-xl px-1.5 py-1.5 font-bold tracking-tight transition hover:bg-black/5 dark:hover:bg-white/10"
       >
-        <img src="/logo.svg" alt="" class="h-7 w-7 shrink-0 dark:invert" />
+        <img :src="db.logo.src" alt="" class="h-7 w-7 shrink-0 rounded-md object-contain" :class="{ 'dark:invert': !db.logo.custom }" />
         <span class="truncate">{{ db.site.siteName }}</span>
       </RouterLink>
 

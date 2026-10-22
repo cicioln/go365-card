@@ -45,7 +45,7 @@ async function logout() {
       :class="open ? 'translate-x-0' : '-translate-x-full'"
     >
       <div class="flex h-16 items-center gap-2.5 px-5">
-        <img src="/logo.svg" alt="" class="h-8 w-8 dark:invert" />
+        <img :src="db.logo.src" alt="" class="h-8 w-8 rounded-md object-contain" :class="{ 'dark:invert': !db.logo.custom }" />
         <span class="truncate font-bold">{{ db.site.siteName }} 后台</span>
         <button class="btn-icon ml-auto lg:hidden" aria-label="关闭菜单" @click="open = false"><X class="h-5 w-5" /></button>
       </div>

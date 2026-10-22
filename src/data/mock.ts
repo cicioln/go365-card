@@ -56,6 +56,10 @@ export interface SiteConfig {
   description: string
   telegram: string
   currency: 'CNY' | 'USD'
+  /** 站点 Logo 图片地址，留空使用默认 Logo */
+  logo: string
+  /** 浏览器标签图标，留空则使用 Logo */
+  favicon: string
 }
 
 export const siteConfig: SiteConfig = {
@@ -64,6 +68,8 @@ export const siteConfig: SiteConfig = {
   // 留空时前台不显示 TG 交流群入口
   telegram: '',
   currency: 'CNY',
+  logo: '',
+  favicon: '',
 }
 
 export const categories: Category[] = [
