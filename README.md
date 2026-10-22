@@ -2,7 +2,23 @@
 
 卡密自动发货商城：Vue 3 前端 + Node.js（Hono + SQLite）后端。
 
-## 运行
+## Docker 部署（推荐）
+
+推送到 main 分支后，GitHub Actions 会自动构建镜像并发布到 `ghcr.io/cicioln/go365-card`（支持 amd64 / arm64）。
+
+```bash
+# 下载 docker-compose.yml 和 .env.example 到同一目录
+curl -O https://raw.githubusercontent.com/cicioln/go365-card/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/cicioln/go365-card/main/.env.example
+# 编辑 .env（至少设置 ADMIN_PASSWORD、PUBLIC_URL 和支付配置），然后
+docker compose pull
+docker compose up -d
+docker compose logs -f   # 查看日志，首次启动会显示管理员信息
+```
+
+访问 `http://服务器IP:3000`，后台 `/admin`。数据保存在名为 `shop-data` 的 Docker 卷中，更新镜像不会丢失；修改对外端口用 `.env` 里的 `HOST_PORT`。
+
+## 本地运行
 
 需要 Node.js 22.6 及以上（使用内置的 `node:sqlite` 和 TypeScript 类型擦除，无需编译后端）。
 

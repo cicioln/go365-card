@@ -1,10 +1,10 @@
 # 用法：
-#   本地构建运行：  docker compose up -d --build
-#   使用 GitHub 构建好的镜像：在 .env 中设置 IMAGE=ghcr.io/<用户名>/<仓库名>:latest，然后
-#                  docker compose pull && docker compose up -d
+#   使用 GitHub 构建好的镜像（推荐）：docker compose pull && docker compose up -d
+#   修改源码后本地构建：            docker compose up -d --build
+#   更新到最新版：                  docker compose pull && docker compose up -d
 services:
   shop:
-    image: ${IMAGE:-go365-card:latest}
+    image: ${IMAGE:-ghcr.io/cicioln/go365-card:latest}
     build: .
     restart: unless-stopped
     ports:
