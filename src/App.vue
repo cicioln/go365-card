@@ -28,7 +28,7 @@ function setMeta(attr: 'name' | 'property', key: string, content: string) {
 }
 
 watchEffect(() => {
-  const name = db.site.siteName || 'Go365 Card'
+  const name = db.site.siteName
   if (route.path.startsWith('/admin')) {
     const page = route.meta.title as string | undefined
     document.title = `${page ? page + ' - ' : ''}${name} 后台`

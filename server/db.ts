@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto'
 import { resolve } from 'node:path'
 import { DATA_DIR, MODE } from './config.ts'
 import * as seed from '../src/data/mock.ts'
-import type { Category, PaymentChannel, Post, Product, SiteConfig } from '../src/data/mock.ts'
+import type { Category, PaymentChannel, Post, Product, SeoConfig, SiteConfig } from '../src/data/mock.ts'
 
 export const db = new DatabaseSync(resolve(DATA_DIR, 'shop.db'))
 
@@ -183,6 +183,30 @@ export function getSite(): SiteConfig {
 }
 export const setSite = (site: SiteConfig) => setSetting('site', site)
 
+/** 首次安装时写入数据库的 SEO 初始值，之后完全以后台设置为准（清空就是空） */
+const INITIAL_SEO: SeoConfig = {
+  titleTemplate: '{title} - {site}',
+  keywords: '',
+  pages: {
+    products: { title: '商品中心', description: '' },
+    notice: { title: '公告', description: '' },
+    about: { title: '关于我们', description: '' },
+    guestOrders: { title: '订单查询', description: '' },
+    cart: { title: '购物车', description: '' },
+  },
+}
+
+/** 只执行一次：还没保存过 SEO 设置的站点（新安装或从旧版本升级）写入初始值 */
+function initSeo() {
+  if (getSetting('seoInit', false)) return
+  tx(() => {
+    const seo = getSetting<Partial<SiteConfig>>('site', {}).seo
+    const empty = !seo || (!seo.titleTemplate && !seo.keywords && !Object.keys(seo.pages ?? {}).length)
+    if (empty) setSite({ ...getSite(), seo: INITIAL_SEO })
+    setSetting('seoInit', true)
+  })
+}
+
 // ---- 初始化 ----
 
 const CODE = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -221,3 +245,4 @@ function seedCatalog() {
 }
 
 seedCatalog()
+initSeo()
