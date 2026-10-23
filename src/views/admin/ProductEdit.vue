@@ -13,6 +13,7 @@ import { guessSplit, joinCards, splitCards, type CardSplit } from '../../utils/c
 import { downloadText } from '../../utils/clipboard'
 import AdminModal from '../../components/admin/AdminModal.vue'
 import type { TrashCard } from '../../adminApi'
+import type { AdminProduct } from '../../types'
 
 const SPLITS: { value: CardSplit; label: string }[] = [
   { value: 'line', label: '每行一条' },
@@ -29,7 +30,8 @@ const blank = (categoryId: number): Product => ({
   cover: { from: '#1e3a8a', to: '#0ea5e9', headline: '', sub: '', dark: true },
 })
 
-const isNew = route.params.id === 'new'
+// 新建保存后地址会换成商品 id，这里跟随路由变化
+const isNew = computed(() => route.params.id === 'new')
 const categories = ref<Category[]>([])
 const form = ref<Product | null>(null)
 const reserved = ref(0)
@@ -127,23 +129,27 @@ const preview = computed(() =>
 onMounted(async () => {
   try {
     categories.value = await adminApi.categories()
-    if (isNew) {
+    if (isNew.value) {
       form.value = blank(categories.value[0]?.id ?? 0)
     } else {
-      const p = await adminApi.product(Number(route.params.id))
-      const { cards, reserved: r, soldCards: s, ...rest } = p
-      form.value = rest
-      splitMode.value = guessSplit(cards)
-      cardsText.value = joinCards(cards, splitMode.value)
-      savedCards.value = cards
-      reserved.value = r
-      soldCards.value = s
-      loadTrash()
+      apply(await adminApi.product(Number(route.params.id)))
     }
   } catch (e) {
     loadError.value = errorText(e)
   }
 })
+
+/** 用服务端返回的商品刷新表单（加载时、保存后） */
+function apply(p: AdminProduct) {
+  const { cards, reserved: r, soldCards: s, ...rest } = p
+  form.value = rest
+  splitMode.value = guessSplit(cards)
+  cardsText.value = joinCards(cards, splitMode.value)
+  savedCards.value = cards
+  reserved.value = r
+  soldCards.value = s
+  loadTrash()
+}
 
 // v-model.number 在输入框清空时得到 ''，转为 NaN 交给服务端校验报错
 const num = (v: unknown) => (v === '' || v == null ? NaN : Number(v))
@@ -177,9 +183,12 @@ async function save() {
   }
   busy.value = true
   try {
-    await (isNew ? adminApi.createProduct(payload) : adminApi.updateProduct(id, payload))
+    // 保存后留在当前页面，用服务端返回的数据刷新（卡密、库存等以服务端为准）
+    const saved = await (isNew.value ? adminApi.createProduct(payload) : adminApi.updateProduct(id, payload))
+    // 新建的商品换成编辑地址，继续编辑时走更新接口
+    if (isNew.value) await router.replace(`/admin/products/${saved.id}`)
+    apply(saved)
     ui.notify('已保存')
-    router.push('/admin/products')
   } catch (e) {
     error.value = errorText(e)
   } finally {
@@ -192,6 +201,11 @@ async function save() {
   <p v-if="loadError" role="alert" class="card p-10 text-center text-zinc-500">{{ loadError }}</p>
   <p v-else-if="!form || !preview" class="card p-10 text-center text-zinc-500">加载中…</p>
   <form v-else class="grid gap-6 xl:grid-cols-[1fr_360px]" @submit.prevent="save">
+    <div class="flex items-center gap-3 xl:col-span-2">
+      <RouterLink to="/admin/products" class="btn-ghost py-2"><ArrowLeft class="h-4 w-4" />返回</RouterLink>
+      <h1 class="min-w-0 truncate text-lg font-bold">{{ isNew ? '新增商品' : form.title || '编辑商品' }}</h1>
+      <button class="btn-primary ml-auto py-2" :disabled="busy">{{ isNew ? '创建商品' : '保存修改' }}</button>
+    </div>
     <div class="space-y-6">
       <section class="card space-y-4 p-6">
         <h2 class="font-bold">基本信息</h2>
