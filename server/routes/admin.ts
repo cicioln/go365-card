@@ -302,10 +302,10 @@ admin.get('/categories', (c) => {
 
 async function saveCategory(c: Parameters<typeof body>[0], id: number | null) {
   const b = await body(c)
-  const data = [slug(b.slug), str(b.name, '名称', 40), str(b.glyph, '图标字符', 2, false), hexColor(b.color, '颜色')] as const
+  const data = [slug(b.slug), str(b.name, '名称', 40), str(b.glyph, '图标字符', 2, false), hexColor(b.color, '颜色'), imageUrl(b.icon, '图标')] as const
   if (one('SELECT 1 FROM categories WHERE slug = ? AND id IS NOT ?', data[0], id)) fail('Slug 已存在')
-  if (id) run('UPDATE categories SET slug = ?, name = ?, glyph = ?, color = ? WHERE id = ?', ...data, id)
-  else run('INSERT INTO categories (slug, name, glyph, color, sort) VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(sort), 0) + 1 FROM categories))', ...data)
+  if (id) run('UPDATE categories SET slug = ?, name = ?, glyph = ?, color = ?, icon = ? WHERE id = ?', ...data, id)
+  else run('INSERT INTO categories (slug, name, glyph, color, icon, sort) VALUES (?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort), 0) + 1 FROM categories))', ...data)
   return c.json({ ok: true })
 }
 

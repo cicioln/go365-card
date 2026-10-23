@@ -190,7 +190,8 @@ const quick = 'flex items-center gap-2.5 rounded-[14px] border border-line bg-su
       :class="{ on: activeCat === c.id }"
       @click="activeCat = c.id"
     >
-      <span class="grid h-[18px] w-[18px] place-items-center rounded-md text-[10px] text-white" :style="{ background: c.color }">{{ c.glyph }}</span>{{ c.name }}
+      <img v-if="c.icon" :src="c.icon" alt="" class="h-[18px] w-[18px] rounded-md object-contain" />
+      <span v-else class="grid h-[18px] w-[18px] place-items-center rounded-md text-[10px] text-white" :style="{ background: c.color }">{{ c.glyph }}</span>{{ c.name }}
       <em>{{ countOf(c.id) }}</em>
     </button>
   </div>

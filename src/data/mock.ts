@@ -7,6 +7,8 @@ export interface Category {
   /** 分类图标的简写字符 */
   glyph: string
   color: string
+  /** 上传的图标图片地址，优先于字符显示 */
+  icon?: string
 }
 
 export interface Product {

@@ -97,6 +97,8 @@ addColumn('channels', 'rate', 'REAL NOT NULL DEFAULT 1')
 addColumn('orders', 'pay_chain', "TEXT NOT NULL DEFAULT ''")
 addColumn('orders', 'pay_address', "TEXT NOT NULL DEFAULT ''")
 addColumn('orders', 'pay_units', 'INTEGER NOT NULL DEFAULT 0')
+// 分类图标：上传的图片地址，空则用字符 + 颜色
+addColumn('categories', 'icon', "TEXT NOT NULL DEFAULT ''")
 db.exec('CREATE INDEX IF NOT EXISTS orders_usdt ON orders(pay_chain, pay_address, pay_units)')
 // 卡密回收站：后台保存时被移除、或随商品一起删除的可售卡密先放这里，可恢复、导出（不设外键，商品删除后仍保留）
 db.exec(`CREATE TABLE IF NOT EXISTS cards_trash (
@@ -149,8 +151,8 @@ export const toProduct = (r: ProductRow): Product => ({
   fulfillment: r.fulfillment, recommended: !!r.recommended, cover: JSON.parse(r.cover),
 })
 
-interface CategoryRow { id: number; slug: string; name: string; glyph: string; color: string }
-export const toCategory = ({ id, slug, name, glyph, color }: CategoryRow): Category => ({ id, slug, name, glyph, color })
+interface CategoryRow { id: number; slug: string; name: string; glyph: string; color: string; icon: string }
+export const toCategory = ({ id, slug, name, glyph, color, icon }: CategoryRow): Category => ({ id, slug, name, glyph, color, icon })
 
 interface PostRow { id: number; slug: string; type: Post['type']; title: string; summary: string; content: string; published_at: string }
 export const toPost = (r: PostRow): Post => ({

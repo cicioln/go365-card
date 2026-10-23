@@ -5,6 +5,7 @@ import type { Category } from '../../data/mock'
 import { adminApi, type AdminCategory } from '../../adminApi'
 import { useUiStore } from '../../stores/ui'
 import AdminModal from '../../components/admin/AdminModal.vue'
+import ImageUpload from '../../components/admin/ImageUpload.vue'
 import { errorText } from '../../http'
 
 const ui = useUiStore()
@@ -24,14 +25,16 @@ onMounted(load)
 
 function open(c?: Category) {
   error.value = ''
-  editing.value = c ? { id: c.id, slug: c.slug, name: c.name, glyph: c.glyph, color: c.color } : { id: 0, slug: '', name: '', glyph: '★', color: '#0071e3' }
+  editing.value = c
+    ? { id: c.id, slug: c.slug, name: c.name, glyph: c.glyph, color: c.color, icon: c.icon || undefined }
+    : { id: 0, slug: '', name: '', glyph: '★', color: '#0071e3' }
 }
 
 async function save() {
   error.value = ''
   busy.value = true
   try {
-    await adminApi.saveCategory(editing.value!)
+    await adminApi.saveCategory({ ...editing.value!, icon: editing.value!.icon ?? '' })
     editing.value = null
     ui.notify('已保存')
     load()
@@ -88,7 +91,8 @@ async function move(i: number, d: number) {
             </td>
             <td>
               <span class="flex items-center gap-3">
-                <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-white" :style="{ background: c.color }">{{ c.glyph }}</span>
+                <img v-if="c.icon" :src="c.icon" alt="" class="h-8 w-8 rounded-lg object-contain" />
+                <span v-else class="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-white" :style="{ background: c.color }">{{ c.glyph }}</span>
                 <span class="font-medium">{{ c.name }}</span>
               </span>
             </td>
@@ -110,9 +114,17 @@ async function move(i: number, d: number) {
     <form class="space-y-4" @submit.prevent="save">
       <div><label class="label" for="c-name">名称</label><input id="c-name" v-model="editing.name" class="input" required /></div>
       <div><label class="label" for="c-slug">链接标识（小写英文/数字/横杠）</label><input id="c-slug" v-model="editing.slug" class="input" placeholder="例如 gpt" required /></div>
-      <div class="grid grid-cols-2 gap-4">
-        <div><label class="label" for="c-glyph">图标字符</label><input id="c-glyph" v-model="editing.glyph" maxlength="2" class="input" /></div>
-        <div><label class="label" for="c-color">颜色</label><input id="c-color" v-model="editing.color" type="color" class="h-10 w-full cursor-pointer rounded-lg" /></div>
+      <div>
+        <span class="label">图标</span>
+        <div class="flex items-center gap-3">
+          <img v-if="editing.icon" :src="editing.icon" alt="图标预览" class="h-12 w-12 shrink-0 rounded-lg object-contain" />
+          <span v-else class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-lg font-bold text-white" :style="{ background: editing.color }">{{ editing.glyph }}</span>
+          <ImageUpload v-model="editing.icon" raw class="flex-1" label="上传图标" hint="建议正方形透明 PNG，≤ 3MB" />
+        </div>
+      </div>
+      <div v-if="!editing.icon" class="grid grid-cols-2 gap-4">
+        <div><label class="label" for="c-glyph">图标字符（未上传图标时显示）</label><input id="c-glyph" v-model="editing.glyph" maxlength="2" class="input" /></div>
+        <div><label class="label" for="c-color">背景颜色</label><input id="c-color" v-model="editing.color" type="color" class="h-10 w-full cursor-pointer rounded-lg" /></div>
       </div>
       <p v-if="error" role="alert" class="text-sm text-red-500">{{ error }}</p>
       <div class="flex justify-end gap-2">
