@@ -27,6 +27,8 @@ COPY --chown=node:node package.json ./
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --chown=node:node server ./server
+# 运维脚本（如找回误删的卡密）
+COPY --chown=node:node scripts ./scripts
 # 后端复用的前端类型、演示数据与工具函数（价格计算、SEO 等）
 COPY --chown=node:node src/data/mock.ts ./src/data/mock.ts
 COPY --chown=node:node src/types.ts ./src/types.ts
