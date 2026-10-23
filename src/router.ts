@@ -12,7 +12,7 @@ export const router = createRouter({
     { path: '/products', component: () => import('./views/Products.vue') },
     { path: '/products/:slug', component: () => import('./views/ProductDetail.vue') },
     { path: '/cart', component: () => import('./views/Cart.vue') },
-    { path: '/checkout', component: () => import('./views/Checkout.vue') },
+    { path: '/checkout', redirect: '/cart' },
     { path: '/orders/:no', component: () => import('./views/OrderDetail.vue') },
     { path: '/guest/orders', component: () => import('./views/GuestOrders.vue') },
     { path: '/auth/login', component: () => import('./views/Auth.vue'), props: { mode: 'login' } },

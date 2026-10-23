@@ -2,13 +2,14 @@
 import { computed, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, ArrowRight, ChevronRight, ClipboardList, Clock, Hand, ShieldCheck, ShoppingCart, Zap } from 'lucide-vue-next'
+import { ArrowLeft, ChevronRight, ClipboardList, Clock, Flame, Hand, Package, ShieldCheck, ShoppingCart, Zap } from 'lucide-vue-next'
 import { getCategories, getProduct, unitPriceFor } from '../api'
 import type { Category, Product } from '../data/mock'
 import { useCartStore } from '../stores/cart'
 import { useUiStore } from '../stores/ui'
 import { useSiteStore } from '../stores/site'
 import ProductCover from '../components/ProductCover.vue'
+import CheckoutPanel from '../components/CheckoutPanel.vue'
 import { money, currencySymbol } from '../utils/money'
 
 const { t } = useI18n()
@@ -37,6 +38,29 @@ const category = computed(() => categories.value.find((c) => c.id === product.va
 const unit = computed(() => (product.value ? unitPriceFor(product.value, qty.value) : 0))
 const saved = computed(() => (product.value ? (product.value.price - unit.value) * qty.value : 0))
 
+/** 图片下方的发货 / 库存 / 销量三格 */
+const stats = computed(() => {
+  const p = product.value
+  if (!p) return []
+  const auto = p.fulfillment === 'auto'
+  return [
+    {
+      label: t('product.delivery'), icon: auto ? Zap : Hand, badge: auto ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn',
+      value: auto ? t('product.autoShort') : t('product.manualShort'), cls: auto ? 'text-ok' : 'text-warn',
+      hint: auto ? t('product.autoHint') : t('product.manualHint'),
+    },
+    {
+      label: t('product.stock'), icon: Package, badge: 'bg-surface-2 text-ink-2', value: String(p.stock), cls: '',
+      hint: p.stock <= 0 ? t('product.soldOut') : p.stock <= 5 ? t('product.only', { n: p.stock }) : t('product.inStock'),
+      hintCls: p.stock <= 0 ? 'text-ink-3' : p.stock <= 5 ? 'text-price' : 'text-ok',
+    },
+    {
+      label: t('product.sold'), icon: Flame, badge: 'bg-price/10 text-price', value: p.sold.toLocaleString(), cls: '',
+      hint: t('product.soldHint'),
+    },
+  ]
+})
+
 /** 批发价阶梯：1 – 4 件、5 – 9 件、10 件以上 */
 const tiers = computed(() => {
   const p = product.value
@@ -64,10 +88,9 @@ function addCart() {
   ui.notify(t('product.added'))
 }
 
-function buyNow() {
-  if (!product.value) return
-  router.push({ path: '/checkout', query: { pid: product.value.id, qty: qty.value } })
-}
+// 下单表单直接嵌在购买面板里，不再跳确认订单页
+const panel = ref<InstanceType<typeof CheckoutPanel>>()
+const lines = computed(() => (product.value && !out.value ? [{ productId: product.value.id, qty: qty.value, unit: unit.value }] : []))
 
 const qtyBtn = 'h-full w-10 font-mono text-base font-bold text-ink-2 disabled:opacity-40'
 </script>
@@ -95,16 +118,14 @@ const qtyBtn = 'h-full w-10 font-mono text-base font-bold text-ink-2 disabled:op
     <div v-else class="grid items-start gap-7 lg:grid-cols-[1.05fr_1fr]">
       <div class="min-w-0">
         <ProductCover :product="product" size="lg" :out="out" />
-        <div class="card mt-4 grid grid-cols-3">
-          <div class="border-r border-line px-[18px] py-4">
-            <span class="block text-xs text-ink-3">{{ t('product.delivery') }}</span>
-            <b class="font-mono text-base" :class="product.fulfillment === 'auto' ? 'text-ok' : 'text-warn'">{{ product.fulfillment === 'auto' ? t('product.autoShort') : t('product.manualShort') }}</b>
-          </div>
-          <div class="border-r border-line px-[18px] py-4">
-            <span class="block text-xs text-ink-3">{{ t('product.stock') }}</span><b class="font-mono text-base">{{ product.stock }}</b>
-          </div>
-          <div class="px-[18px] py-4">
-            <span class="block text-xs text-ink-3">{{ t('product.sold') }}</span><b class="font-mono text-base">{{ product.sold.toLocaleString() }}</b>
+        <div class="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+          <div v-for="s in stats" :key="s.label" class="card flex items-center gap-3 p-3 sm:p-4">
+            <span class="hidden h-10 w-10 shrink-0 place-items-center rounded-xl sm:grid" :class="s.badge"><component :is="s.icon" class="h-[18px] w-[18px]" /></span>
+            <div class="min-w-0">
+              <span class="block text-xs text-ink-3">{{ s.label }}</span>
+              <b class="block truncate font-mono text-[15px] sm:text-base" :class="s.cls">{{ s.value }}</b>
+              <span class="block truncate text-[11.5px]" :class="s.hintCls ?? 'text-ink-3'">{{ s.hint }}</span>
+            </div>
           </div>
         </div>
 
@@ -164,18 +185,21 @@ const qtyBtn = 'h-full w-10 font-mono text-base font-bold text-ink-2 disabled:op
           </div>
         </div>
 
-        <div class="mt-[22px] mb-3.5 hidden items-center justify-between border-t border-dashed border-line-2 pt-[18px] md:flex">
-          <span class="text-ink-3">{{ t('cart.total') }}<template v-if="saved > 0.001"> · {{ t('product.saved', { p: money(saved) }) }}</template></span>
-          <b class="font-mono text-[22px]">{{ money(unit * qty) }}</b>
-        </div>
-        <div class="hidden grid-cols-[1fr_auto] gap-2 md:grid">
-          <button class="btn-primary h-[50px] text-[15px]" :disabled="out" @click="buyNow">
-            {{ out ? t('product.soldOut') : t('product.buyNow') }}<ArrowRight v-if="!out" class="h-4 w-4" />
-          </button>
-          <button class="btn-ghost h-[50px] w-[50px] p-0" :disabled="out" :title="t('product.addCart')" :aria-label="t('product.addCart')" @click="addCart">
-            <ShoppingCart class="h-4 w-4" />
-          </button>
-        </div>
+        <CheckoutPanel
+          ref="panel"
+          class="mt-[22px]"
+          :lines="lines"
+          :disabled="out"
+          :label="out ? t('product.soldOut') : t('product.buyNow')"
+          mobile-bar
+        >
+          <template #subtotal-label>{{ t('cart.total') }}<template v-if="saved > 0.001"> · {{ t('product.saved', { p: money(saved) }) }}</template></template>
+          <template #actions>
+            <button type="button" class="btn-ghost h-[50px] w-[50px] p-0" :disabled="out" :title="t('product.addCart')" :aria-label="t('product.addCart')" @click="addCart">
+              <ShoppingCart class="h-4 w-4" />
+            </button>
+          </template>
+        </CheckoutPanel>
         <div class="mt-[18px] flex flex-wrap gap-4 text-[12.5px] text-ink-3">
           <span class="inline-flex items-center gap-1.5"><ShieldCheck class="h-3.5 w-3.5" />{{ t('product.assure1') }}</span>
           <span class="inline-flex items-center gap-1.5"><Clock class="h-3.5 w-3.5" />{{ t('product.assure2') }}</span>
@@ -197,8 +221,8 @@ const qtyBtn = 'h-full w-10 font-mono text-base font-bold text-ink-2 disabled:op
         <button :class="qtyBtn" class="!w-9" :disabled="qty >= product.stock || out" aria-label="+" @click="clamp(qty + 1)">+</button>
       </div>
       <button class="btn-ghost h-12 w-12 shrink-0 p-0" :disabled="out" :aria-label="t('product.addCart')" @click="addCart"><ShoppingCart class="h-4 w-4" /></button>
-      <button class="btn-primary h-12 flex-1" :disabled="out" @click="buyNow">
-        {{ out ? t('product.soldOut') : `${t('product.buy')} · ${money(unit * qty)}` }}
+      <button class="btn-primary h-12 flex-1" :disabled="out || panel?.busy" @click="panel?.submit()">
+        {{ out ? t('product.soldOut') : `${t('product.buy')} · ${money(panel?.total ?? unit * qty)}` }}
       </button>
     </div>
   </div>

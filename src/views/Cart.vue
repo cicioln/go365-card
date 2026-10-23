@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Trash2, ShoppingCart } from 'lucide-vue-next'
 import { useCartStore } from '../stores/cart'
 import ProductCover from '../components/ProductCover.vue'
+import CheckoutPanel from '../components/CheckoutPanel.vue'
 import { money } from '../utils/money'
 import { errorText } from '../http'
 
@@ -11,6 +12,7 @@ const { t } = useI18n()
 const cart = useCartStore()
 const loading = ref(true)
 const error = ref('')
+const lines = computed(() => cart.detailed.map((i) => ({ productId: i.productId, qty: i.qty, unit: i.unit })))
 
 // 每次打开购物车都从服务端刷新价格与库存
 onMounted(async () => {
@@ -61,9 +63,8 @@ onMounted(async () => {
           </button>
         </li>
       </ul>
-      <div class="card mt-4 flex items-center justify-between p-5">
-        <p>{{ t('cart.total') }}: <b class="text-2xl text-price">{{ money(cart.total) }}</b></p>
-        <RouterLink to="/checkout" class="btn-primary px-8 py-3">{{ t('cart.checkout') }}</RouterLink>
+      <div class="card mt-4 p-5 sm:p-6">
+        <CheckoutPanel :lines="lines" from-cart />
       </div>
     </template>
   </div>
