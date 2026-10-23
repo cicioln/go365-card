@@ -3,7 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { Mail, Lock, CreditCard, Wallet, MessageCircle, Coins, CircleCheck } from 'lucide-vue-next'
-import { createOrder, getPaymentChannels, getProductsByIds, orderLink, unitPriceFor } from '../api'
+import { createOrder, getPaymentChannels, getProductsByIds, orderLink, startPay, unitPriceFor } from '../api'
+import { openPayWindow } from '../utils/payWindow'
 import type { PaymentChannel, Product } from '../data/mock'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
@@ -76,6 +77,8 @@ async function submit() {
   if (!channel.value) return (error.value = t('checkout.noChannel'))
   if (!lines.value.length) return router.replace('/cart')
   busy.value = true
+  // 跳网关的渠道：提交时就开新窗口（内置 USDT 在订单页扫码转账，不开窗口）
+  const win = channel.value.chain ? null : openPayWindow()
   try {
     const order = await createOrder({
       email: email.value.trim(),
@@ -84,8 +87,18 @@ async function submit() {
       lines: lines.value.map((l) => ({ productId: l.productId, qty: l.qty })),
     })
     if (!isDirect.value) cart.clear()
+    // 当前页进入订单页等待回调到账，新窗口去支付；网关下单失败时关掉窗口，订单页可再点「去支付」
+    if (win && !order.usdt) {
+      try {
+        const { url } = await startPay(order.orderNo, order.token)
+        if (!win.go(url)) return
+      } catch {
+        win.close()
+      }
+    } else win?.close()
     router.push(orderLink(order))
   } catch (e) {
+    win?.close()
     error.value = errorText(e)
   } finally {
     busy.value = false

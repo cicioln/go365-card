@@ -9,6 +9,7 @@ import { money } from '../utils/money'
 import { errorText } from '../http'
 import { useSiteStore } from '../stores/site'
 import UsdtPay from '../components/UsdtPay.vue'
+import { openPayWindow } from '../utils/payWindow'
 import CardList from '../components/CardList.vue'
 
 const { t } = useI18n()
@@ -47,10 +48,13 @@ onBeforeUnmount(() => clearTimeout(timer))
 async function pay() {
   payError.value = ''
   paying.value = true
+  // 新窗口去支付，本页继续轮询，回调到账后自动显示卡密
+  const win = openPayWindow()
   try {
     const { url } = await startPay(order.value!.orderNo, token.value ?? order.value!.token)
-    window.location.href = url
+    if (win.go(url)) paying.value = false
   } catch (e) {
+    win.close()
     payError.value = errorText(e)
     paying.value = false
     load(true)
