@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { Search, RefreshCw, Trash2, X } from 'lucide-vue-next'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Search, RefreshCw, Trash2, X, Radio, Pause } from 'lucide-vue-next'
 import { adminApi } from '../../adminApi'
-import type { AccessLogResult } from '../../types'
+import type { AccessLog, AccessLogResult } from '../../types'
 import { useUiStore } from '../../stores/ui'
 import { errorText } from '../../http'
 
@@ -51,6 +51,99 @@ watch([ip, keyword], () => {
   timer = window.setTimeout(() => (page.value === 1 ? load() : (page.value = 1)), 300)
 })
 
+// ---- 实时模式：通过 SSE 接收新请求，符合当前筛选条件的插到列表顶部 ----
+
+const readLive = () => {
+  try {
+    return localStorage.getItem('logs-live') !== '0'
+  } catch {
+    return true
+  }
+}
+const live = ref(readLive())
+/** connecting 连接中 / open 已连接 / error 断开（浏览器会自动重连） */
+const liveState = ref<'off' | 'connecting' | 'open' | 'error'>('off')
+const fresh = ref(new Set<string>())
+let es: EventSource | null = null
+let statsTimer: number | undefined
+
+const matches = (r: AccessLog) =>
+  (!ip.value || r.ip === ip.value) &&
+  (!kind.value || r.kind === kind.value) &&
+  (!keyword.value || r.path.includes(keyword.value) || r.ua.includes(keyword.value))
+
+function onLog(r: AccessLog) {
+  const d = data.value
+  // 只在第一页插入，翻到后面的页时只更新计数
+  if (!d) return
+  if (matches(r)) {
+    d.total++
+    if (page.value === 1) {
+      d.list.unshift(r)
+      if (d.list.length > d.pageSize) d.list.pop()
+      const k = r.key!
+      fresh.value.add(k)
+      setTimeout(() => fresh.value.delete(k), 1500)
+    }
+  }
+  if (r.kind === 'page') d.pageViews++
+  // 独立 IP 和排行由服务端统计，最多每 10 秒刷新一次
+  if (!statsTimer) statsTimer = window.setTimeout(refreshStats, 10_000)
+}
+
+async function refreshStats() {
+  statsTimer = undefined
+  try {
+    const r = await adminApi.logs({ ip: ip.value, keyword: keyword.value, kind: kind.value, hours: hours.value, page: page.value })
+    if (!data.value) return
+    data.value.uniqueIps = r.uniqueIps
+    data.value.topIps = r.topIps
+    data.value.total = r.total
+  } catch {
+    /* 下次再刷新 */
+  }
+}
+
+function connect() {
+  disconnect()
+  liveState.value = 'connecting'
+  es = new EventSource('/api/admin/logs/stream')
+  es.addEventListener('ready', () => (liveState.value = 'open'))
+  es.onmessage = (e) => {
+    try {
+      onLog(JSON.parse(e.data))
+    } catch {
+      /* 忽略格式错误的消息 */
+    }
+  }
+  es.onerror = () => {
+    liveState.value = 'error'
+    // 连接被拒（会话失效、连接数过多）时浏览器不会重连，这里稍后重试
+    if (es?.readyState === EventSource.CLOSED) setTimeout(() => live.value && liveState.value === 'error' && connect(), 5000)
+  }
+}
+
+function disconnect() {
+  es?.close()
+  es = null
+  liveState.value = 'off'
+}
+
+watch(live, (on) => {
+  try {
+    localStorage.setItem('logs-live', on ? '1' : '0')
+  } catch {
+    /* 隐私模式等无法写入 */
+  }
+  on ? connect() : disconnect()
+}, { immediate: true })
+onBeforeUnmount(() => {
+  disconnect()
+  clearTimeout(statsTimer)
+})
+
+const liveText = { off: '已暂停', connecting: '连接中…', open: '实时', error: '连接断开，正在重连…' }
+
 async function clearAll() {
   if (!confirm('确定清空全部访问日志？此操作不可恢复。')) return
   try {
@@ -97,7 +190,19 @@ async function clearAll() {
           <Search class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input v-model.trim="keyword" class="input pl-9" placeholder="路径 / 浏览器标识" aria-label="搜索日志" />
         </div>
-        <div class="ml-auto flex gap-1">
+        <div class="ml-auto flex items-center gap-1">
+          <button
+            class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition hover:bg-zinc-100 dark:hover:bg-white/5"
+            :class="liveState === 'open' ? 'text-emerald-600' : liveState === 'error' ? 'text-amber-500' : 'text-zinc-500'"
+            :aria-pressed="live"
+            :title="live ? '点击暂停实时更新' : '点击开启实时更新'"
+            @click="live = !live"
+          >
+            <span v-if="liveState === 'open'" class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" /><span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" /></span>
+            <Radio v-else-if="live" class="h-3.5 w-3.5" />
+            <Pause v-else class="h-3.5 w-3.5" />
+            {{ liveText[liveState] }}
+          </button>
           <button class="btn-icon" aria-label="刷新" :disabled="loading" @click="load"><RefreshCw class="h-4 w-4" /></button>
           <button class="btn-icon hover:text-red-500" aria-label="清空日志" @click="clearAll"><Trash2 class="h-4 w-4" /></button>
         </div>
@@ -108,7 +213,7 @@ async function clearAll() {
           <tbody>
             <tr v-if="loading && !data"><td colspan="7" class="py-10 text-center text-zinc-500">加载中…</td></tr>
             <tr v-else-if="!data?.list.length"><td colspan="7" class="py-10 text-center text-zinc-500">暂无记录</td></tr>
-            <tr v-for="r in data?.list ?? []" :key="r.id">
+            <tr v-for="r in data?.list ?? []" :key="r.key ?? r.id" class="transition-colors duration-1000" :class="r.key && fresh.has(r.key) ? 'bg-emerald-50 dark:bg-emerald-500/10' : ''">
               <td class="whitespace-nowrap text-zinc-500">{{ new Date(r.at).toLocaleString() }}</td>
               <td class="whitespace-nowrap"><button class="font-mono text-xs hover:text-brand hover:underline" :title="`只看 ${r.ip}`" @click="ip = r.ip">{{ r.ip }}</button></td>
               <td class="whitespace-nowrap text-xs">{{ kindText[r.kind] }}</td>
@@ -148,5 +253,5 @@ async function clearAll() {
       </ul>
     </div>
   </div>
-  <p class="mt-4 text-xs text-zinc-400">日志保留 30 天（可用环境变量 LOG_RETENTION_DAYS 调整），不记录静态资源和链接里的查询参数。位于 Nginx 等反向代理之后时需设置 TRUST_PROXY=1，否则这里显示的都是代理的 IP。</p>
+  <p class="mt-4 text-xs text-zinc-400">开启实时后，新请求会立即出现在列表顶部（仅第一页，按当前筛选条件过滤）。日志保留 30 天（可用环境变量 LOG_RETENTION_DAYS 调整），不记录静态资源和链接里的查询参数。位于 Nginx 等反向代理之后时需设置 TRUST_PROXY=1，否则这里显示的都是代理的 IP。</p>
 </template>

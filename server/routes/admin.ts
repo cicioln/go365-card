@@ -8,7 +8,8 @@ import {
   all, getSetting, getSite, listCategories, listChannels, listPosts, one, run, setSetting, setSite, toProduct, tx, PRODUCT_SQL, type ProductRow,
 } from '../db.ts'
 import { closeOrder, deleteOrder, deliverLine, findOrder, markPaid, toOrder, type OrderRow } from '../orders.ts'
-import { flushLogs } from '../logs.ts'
+import { streamSSE } from 'hono/streaming'
+import { flushLogs, subscribeLogs, type LiveLog } from '../logs.ts'
 import { cleanHtml } from '../sanitize.ts'
 import { epayReady, mergePay, MOCK_ALLOWED, payConfig, payLocks, publicUrl, requestOrigin, type PayConfig } from '../settings.ts'
 import { checkSetupCode, clearSetupCode, createAdmin, needsSetup } from '../setup.ts'
@@ -536,6 +537,44 @@ admin.get('/logs', (c) => {
     list: list.map((r) => ({ ...r, at: new Date(r.at).toISOString() })),
     total, pageSize: PAGE, uniqueIps, pageViews,
     topIps: topIps.map((r) => ({ ...r, last: new Date(r.last).toISOString() })),
+  })
+})
+
+/** 实时日志：SSE 推送新请求，每 20 秒发心跳并复查后台会话，会话失效即断开 */
+admin.get('/logs/stream', (c) => {
+  const queue: LiveLog[] = []
+  let wake: (() => void) | null = null
+  const unsubscribe = subscribeLogs((log) => {
+    if (queue.length < 1000) queue.push(log)
+    wake?.()
+  })
+  if (!unsubscribe) fail('实时日志连接数过多，请关闭其他日志页面', 429)
+  // 经过 Nginx 时关闭响应缓冲，否则推送会被攒着不发
+  c.header('X-Accel-Buffering', 'no')
+  return streamSSE(c, async (stream) => {
+    stream.onAbort(() => {
+      unsubscribe()
+      wake?.()
+    })
+    try {
+      await stream.writeSSE({ event: 'ready', data: '' })
+      let lastCheck = Date.now()
+      while (!stream.aborted) {
+        while (queue.length) await stream.writeSSE({ data: JSON.stringify(queue.shift()) })
+        await new Promise<void>((r) => {
+          wake = r
+          setTimeout(r, 20_000)
+        })
+        wake = null
+        if (Date.now() - lastCheck >= 20_000) {
+          lastCheck = Date.now()
+          if (sessionOf(c, 'admin') !== c.get('adminId')) break
+          await stream.write(': ping\n\n')
+        }
+      }
+    } finally {
+      unsubscribe()
+    }
   })
 })
 

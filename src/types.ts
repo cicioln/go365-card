@@ -59,7 +59,9 @@ export interface AdminStats {
 
 /** 访问日志 */
 export interface AccessLog {
-  id: number
+  /** 数据库记录有 id，实时推送的记录用 key 区分 */
+  id?: number
+  key?: string
   at: string
   ip: string
   method: string
