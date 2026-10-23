@@ -362,10 +362,10 @@ async function saveChannel(c: Parameters<typeof body>[0], id: number | null) {
   const chain = type === 'usdt' ? oneOf(b.chain ?? '', ['', ...CHAIN_KEYS] as const, '收款链') : ''
   const address = chain ? checkAddress(chain, str(b.address, '收款地址', 64)) : ''
   const rate = chain ? num(b.rate, '汇率', 0.0001, 1e6) : 1
-  const data = [str(b.name, '渠道名称', 60), type, round2(num(b.feeRate, '手续费率', 0, 100)), b.enabled === false ? 0 : 1, chain, address, rate] as const
-  if (id) run('UPDATE channels SET name = ?, type = ?, fee_rate = ?, enabled = ?, chain = ?, address = ?, rate = ? WHERE id = ?', ...data, id)
-  else run(`INSERT INTO channels (name, type, fee_rate, enabled, chain, address, rate, sort)
-    VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort), 0) + 1 FROM channels))`, ...data)
+  const data = [str(b.name, '渠道名称', 60), type, round2(num(b.feeRate, '手续费率', 0, 100)), b.enabled === false ? 0 : 1, chain, address, rate, imageUrl(b.icon, '图标')] as const
+  if (id) run('UPDATE channels SET name = ?, type = ?, fee_rate = ?, enabled = ?, chain = ?, address = ?, rate = ?, icon = ? WHERE id = ?', ...data, id)
+  else run(`INSERT INTO channels (name, type, fee_rate, enabled, chain, address, rate, icon, sort)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort), 0) + 1 FROM channels))`, ...data)
   return c.json({ ok: true })
 }
 

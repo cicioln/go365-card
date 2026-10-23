@@ -138,7 +138,8 @@ async function submit() {
               :class="channelId === c.id ? 'border-brand bg-brand-soft dark:bg-brand/20' : 'border-line-2 hover:border-brand/40'"
             >
               <input v-model="channelId" type="radio" name="channel" :value="c.id" class="sr-only" />
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" :class="chIcon[c.type]?.cls">
+              <img v-if="c.icon" :src="c.icon" alt="" class="h-9 w-9 shrink-0 rounded-lg object-contain" />
+              <span v-else class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" :class="chIcon[c.type]?.cls">
                 <component :is="chIcon[c.type]?.icon ?? CreditCard" class="h-[18px] w-[18px]" />
               </span>
               <span class="min-w-0 flex-1">

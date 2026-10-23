@@ -51,6 +51,8 @@ export interface PaymentChannel {
   address?: string
   /** 汇率：1 USDT = rate 站点货币 */
   rate?: number
+  /** 上传的图标图片地址，空则按类型显示默认图标 */
+  icon?: string
 }
 
 export interface SiteConfig {

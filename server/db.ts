@@ -100,6 +100,8 @@ addColumn('orders', 'pay_units', 'INTEGER NOT NULL DEFAULT 0')
 // 易支付 mapi 下单拿到的支付链接，重复点击支付时复用（网关不允许同一订单号重复下单）
 addColumn('orders', 'pay_link', "TEXT NOT NULL DEFAULT ''")
 // 分类图标：上传的图片地址，空则用字符 + 颜色
+// 支付渠道图标：上传的图片地址，空则按类型显示默认图标
+addColumn('channels', 'icon', "TEXT NOT NULL DEFAULT ''")
 addColumn('categories', 'icon', "TEXT NOT NULL DEFAULT ''")
 db.exec('CREATE INDEX IF NOT EXISTS orders_usdt ON orders(pay_chain, pay_address, pay_units)')
 // 卡密回收站：后台保存时被移除、或随商品一起删除的可售卡密先放这里，可恢复、导出（不设外键，商品删除后仍保留）
@@ -163,11 +165,11 @@ export const toPost = (r: PostRow): Post => ({
 
 export interface ChannelRow {
   id: number; name: string; type: PaymentChannel['type']; fee_rate: number; enabled: number
-  chain: string; address: string; rate: number
+  chain: string; address: string; rate: number; icon: string
 }
 export const toChannel = (r: ChannelRow): PaymentChannel => ({
   id: r.id, name: r.name, type: r.type, feeRate: r.fee_rate, enabled: !!r.enabled,
-  chain: (r.chain || '') as PaymentChannel['chain'], address: r.address, rate: r.rate,
+  chain: (r.chain || '') as PaymentChannel['chain'], address: r.address, rate: r.rate, icon: r.icon,
 })
 
 export const listCategories = () => all<CategoryRow>('SELECT * FROM categories ORDER BY sort, id').map(toCategory)

@@ -5,6 +5,7 @@ import type { PaymentChannel } from '../../data/mock'
 import { adminApi } from '../../adminApi'
 import { useUiStore } from '../../stores/ui'
 import AdminModal from '../../components/admin/AdminModal.vue'
+import ImageUpload from '../../components/admin/ImageUpload.vue'
 import PaymentGateway from '../../components/admin/PaymentGateway.vue'
 import { errorText } from '../../http'
 
@@ -33,7 +34,7 @@ onMounted(load)
 function open(c?: PaymentChannel) {
   error.value = ''
   editing.value = c
-    ? { ...c, chain: c.chain ?? '', address: c.address ?? '', rate: c.rate ?? 1 }
+    ? { ...c, chain: c.chain ?? '', address: c.address ?? '', rate: c.rate ?? 1, icon: c.icon || undefined }
     : { id: 0, name: '', type: 'alipay', feeRate: 0, enabled: true, chain: '', address: '', rate: 1 }
 }
 
@@ -42,7 +43,7 @@ async function save() {
   const c = editing.value!
   busy.value = true
   try {
-    await adminApi.saveChannel({ ...c, feeRate: Number(c.feeRate), rate: Number(c.rate) })
+    await adminApi.saveChannel({ ...c, feeRate: Number(c.feeRate), rate: Number(c.rate), icon: c.icon ?? '' })
     editing.value = null
     ui.notify('已保存')
     load()
@@ -86,7 +87,12 @@ async function remove(c: PaymentChannel) {
         <thead><tr><th>名称</th><th>类型</th><th>手续费率</th><th>启用</th><th class="text-right">操作</th></tr></thead>
         <tbody>
           <tr v-for="c in list" :key="c.id">
-            <td class="font-medium">{{ c.name }}</td>
+            <td>
+              <span class="flex items-center gap-3">
+                <img v-if="c.icon" :src="c.icon" alt="" class="h-7 w-7 shrink-0 rounded-lg object-contain" />
+                <span class="font-medium">{{ c.name }}</span>
+              </span>
+            </td>
             <td>
               {{ typeText[c.type] }}
               <span v-if="modeText(c)" class="block text-xs text-zinc-400">{{ modeText(c) }}</span>
@@ -117,6 +123,13 @@ async function remove(c: PaymentChannel) {
   <AdminModal v-if="editing" :title="editing.id ? '编辑渠道' : '新增渠道'" @close="editing = null">
     <form class="space-y-4" @submit.prevent="save">
       <div><label class="label" for="pc-name">名称</label><input id="pc-name" v-model="editing.name" class="input" required /></div>
+      <div>
+        <span class="label">图标（可选，不上传则按类型显示默认图标）</span>
+        <div class="flex items-center gap-3">
+          <img v-if="editing.icon" :src="editing.icon" alt="图标预览" class="h-12 w-12 shrink-0 rounded-lg object-contain" />
+          <ImageUpload v-model="editing.icon" raw class="flex-1" label="上传图标" hint="建议正方形透明 PNG，≤ 3MB" />
+        </div>
+      </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="label" for="pc-type">类型</label>
