@@ -50,6 +50,11 @@ const sorts = ['default', 'sold', 'price', 'new'] as const
 
 /** 实时发货：有真实成交显示脱敏订单，否则显示热销商品 */
 const hot = computed(() => [...products.value].sort((a, b) => b.sold - a.sold).slice(0, 4))
+/** 商品所属分类：头像优先用分类上传的图标，其次分类字符 + 颜色；商品已删除时退回标题缩写 */
+const catOfProduct = (productId: number) => {
+  const p = products.value.find((x) => x.id === productId)
+  return p && categories.value.find((c) => c.id === p.categoryId)
+}
 const totalSold = computed(() => feed.value?.sold ?? products.value.reduce((n, p) => n + p.sold, 0))
 
 const steps = [1, 2, 3, 4]
@@ -111,7 +116,8 @@ const quick = 'flex items-center gap-2.5 rounded-[14px] border border-line bg-su
       <ul class="flex flex-1 flex-col gap-0.5">
         <template v-if="feed?.recent.length">
           <li v-for="(o, i) in feed.recent.slice(0, 4)" :key="i" class="grid grid-cols-[34px_1fr_auto] items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-surface-2">
-            <span class="grid h-[34px] w-[34px] place-items-center rounded-[10px] font-mono text-[11px] font-bold text-white" :style="{ background: avatarOf(o.title).color }">{{ avatarOf(o.title).text }}</span>
+            <img v-if="catOfProduct(o.productId)?.icon" :src="catOfProduct(o.productId)!.icon" alt="" class="h-[34px] w-[34px] rounded-[10px] object-contain" />
+            <span v-else class="grid h-[34px] w-[34px] place-items-center rounded-[10px] font-mono text-[11px] font-bold text-white" :style="{ background: catOfProduct(o.productId)?.color ?? avatarOf(o.title).color }">{{ catOfProduct(o.productId)?.glyph || avatarOf(o.title).text }}</span>
             <div class="min-w-0">
               <b class="block truncate text-[13.5px]">{{ o.title }}</b>
               <small class="text-xs text-ink-3">{{ o.email }} · ×{{ o.qty }}</small>
@@ -124,7 +130,8 @@ const quick = 'flex items-center gap-2.5 rounded-[14px] border border-line bg-su
         <template v-else>
           <li v-for="p in hot" :key="p.id">
             <RouterLink :to="`/products/${p.slug}`" class="grid grid-cols-[34px_1fr_auto] items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-surface-2">
-              <span class="grid h-[34px] w-[34px] place-items-center rounded-[10px] font-mono text-[11px] font-bold text-white" :style="{ background: avatarOf(p.title).color }">{{ avatarOf(p.title).text }}</span>
+              <img v-if="catOfProduct(p.id)?.icon" :src="catOfProduct(p.id)!.icon" alt="" class="h-[34px] w-[34px] rounded-[10px] object-contain" />
+              <span v-else class="grid h-[34px] w-[34px] place-items-center rounded-[10px] font-mono text-[11px] font-bold text-white" :style="{ background: catOfProduct(p.id)?.color ?? avatarOf(p.title).color }">{{ catOfProduct(p.id)?.glyph || avatarOf(p.title).text }}</span>
               <div class="min-w-0">
                 <b class="block truncate text-[13.5px]">{{ p.title }}</b>
                 <small class="text-xs text-ink-3">{{ t('product.sold') }} <span class="font-mono">{{ p.sold.toLocaleString() }}</span></small>
