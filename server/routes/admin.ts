@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { writeFileSync } from 'node:fs'
+import { unlinkSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { UPLOAD_DIR } from '../config.ts'
@@ -293,6 +293,66 @@ admin.post('/upload', rateLimit('upload', 120, 600), async (c) => {
   const name = `${Date.now().toString(36)}-${randomBytes(8).toString('hex')}.${ext}`
   writeFileSync(resolve(UPLOAD_DIR, name), buf)
   return c.json({ url: `/uploads/${name}` })
+})
+
+// ---- 图标库 ----
+
+/** 图标被哪些地方使用：分类、支付渠道、站点 Logo / 标签图标 */
+function iconUsage() {
+  const used = new Map<string, string[]>()
+  const add = (url: string, where: string) => url && used.set(url, [...(used.get(url) ?? []), where])
+  for (const r of all<{ name: string; icon: string }>("SELECT name, icon FROM categories WHERE icon != ''")) add(r.icon, `分类「${r.name}」`)
+  for (const r of all<{ name: string; icon: string }>("SELECT name, icon FROM channels WHERE icon != ''")) add(r.icon, `支付渠道「${r.name}」`)
+  const site = getSite()
+  add(site.logo, '网站 Logo')
+  add(site.favicon, '浏览器标签图标')
+  return used
+}
+
+/** 把已经在用、但还不在图标库里的图片收进来（旧版本直接上传的图标） */
+function syncIcons() {
+  const now = new Date().toISOString()
+  for (const [url, where] of iconUsage())
+    if (url.startsWith('/uploads/')) run('INSERT OR IGNORE INTO icons (name, url, created_at) VALUES (?, ?, ?)', where[0].replace(/^.*「(.*)」$/, '$1'), url, now)
+}
+
+admin.get('/icons', (c) => {
+  syncIcons()
+  const used = iconUsage()
+  const rows = all<{ id: number; name: string; url: string; created_at: string }>('SELECT * FROM icons ORDER BY id DESC')
+  return c.json(rows.map((r) => ({ id: r.id, name: r.name, url: r.url, createdAt: r.created_at, usedBy: used.get(r.url) ?? [] })))
+})
+
+admin.post('/icons', async (c) => {
+  const b = await body(c)
+  const url = imageUrl(b.url, '图标')
+  if (!url.startsWith('/uploads/')) fail('请先上传图标图片')
+  run('INSERT OR IGNORE INTO icons (name, url, created_at) VALUES (?, ?, ?)', str(b.name, '图标名称', 40, false) || '未命名', url, new Date().toISOString())
+  return c.json(one('SELECT id, name, url, created_at createdAt FROM icons WHERE url = ?', url))
+})
+
+admin.patch('/icons/:id', async (c) => {
+  const b = await body(c)
+  run('UPDATE icons SET name = ? WHERE id = ?', str(b.name, '图标名称', 40), Number(c.req.param('id')))
+  return c.json({ ok: true })
+})
+
+/** 正在使用的图标不能删除；删除后图片文件一并删除（商品封面等不在图标库里的图片不受影响） */
+admin.delete('/icons/:id', (c) => {
+  const icon = one<{ url: string }>('SELECT url FROM icons WHERE id = ?', Number(c.req.param('id'))) ?? fail('图标不存在', 404)
+  const where = iconUsage().get(icon.url)
+  if (where) fail(`图标正在被使用：${where.join('、')}，请先更换后再删除`, 409)
+  run('DELETE FROM icons WHERE url = ?', icon.url)
+  const file = /^\/uploads\/([\w-]+\.\w+)$/.exec(icon.url)?.[1]
+  const inProducts = one("SELECT 1 FROM products WHERE cover LIKE ? OR content LIKE ?", `%${icon.url}%`, `%${icon.url}%`)
+  if (file && !inProducts) {
+    try {
+      unlinkSync(resolve(UPLOAD_DIR, file))
+    } catch {
+      /* 文件已不存在 */
+    }
+  }
+  return c.json({ ok: true })
 })
 
 // ---- 分类 ----

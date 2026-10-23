@@ -5,7 +5,7 @@ import type { PaymentChannel } from '../../data/mock'
 import { adminApi } from '../../adminApi'
 import { useUiStore } from '../../stores/ui'
 import AdminModal from '../../components/admin/AdminModal.vue'
-import ImageUpload from '../../components/admin/ImageUpload.vue'
+import IconPicker from '../../components/admin/IconPicker.vue'
 import PaymentGateway from '../../components/admin/PaymentGateway.vue'
 import { errorText } from '../../http'
 
@@ -127,7 +127,7 @@ async function remove(c: PaymentChannel) {
         <span class="label">图标（可选，不上传则按类型显示默认图标）</span>
         <div class="flex items-center gap-3">
           <img v-if="editing.icon" :src="editing.icon" alt="图标预览" class="h-12 w-12 shrink-0 rounded-lg object-contain" />
-          <ImageUpload v-model="editing.icon" raw class="flex-1" label="上传图标" hint="建议正方形透明 PNG，≤ 3MB" />
+          <IconPicker v-model="editing.icon" class="flex-1" />
         </div>
       </div>
       <div class="grid grid-cols-2 gap-4">

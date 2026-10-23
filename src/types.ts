@@ -57,6 +57,16 @@ export interface AdminStats {
   recent: Order[]
 }
 
+/** 图标库里的图标 */
+export interface LibraryIcon {
+  id: number
+  name: string
+  url: string
+  createdAt: string
+  /** 使用该图标的位置，如「分类「GPT」」；为空表示未使用 */
+  usedBy: string[]
+}
+
 /** 访问日志 */
 export interface AccessLog {
   /** 数据库记录有 id，实时推送的记录用 key 区分 */

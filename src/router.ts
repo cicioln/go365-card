@@ -38,6 +38,7 @@ export const router = createRouter({
         { path: 'posts', component: () => import('./views/admin/PostsAdmin.vue'), meta: { title: '文章管理' } },
         { path: 'payments', component: () => import('./views/admin/PaymentsAdmin.vue'), meta: { title: '支付渠道' } },
         { path: 'users', component: () => import('./views/admin/UsersAdmin.vue'), meta: { title: '用户管理' } },
+        { path: 'icons', component: () => import('./views/admin/IconsAdmin.vue'), meta: { title: '图标库' } },
         { path: 'logs', component: () => import('./views/admin/LogsAdmin.vue'), meta: { title: '访问日志' } },
         { path: 'settings', component: () => import('./views/admin/SettingsAdmin.vue'), meta: { title: '系统设置' } },
       ],

@@ -111,6 +111,10 @@ db.exec(`CREATE TABLE IF NOT EXISTS cards_trash (
   code TEXT NOT NULL, deleted_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS cards_trash_product ON cards_trash(product_id)`)
+// 图标库：后台统一管理的图标图片，分类、支付渠道、Logo 等处从这里选择
+db.exec(`CREATE TABLE IF NOT EXISTS icons (
+  id INTEGER PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL
+)`)
 
 type Param = null | number | bigint | string | Uint8Array
 const cache = new Map<string, StatementSync>()

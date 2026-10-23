@@ -5,7 +5,7 @@ import type { Category } from '../../data/mock'
 import { adminApi, type AdminCategory } from '../../adminApi'
 import { useUiStore } from '../../stores/ui'
 import AdminModal from '../../components/admin/AdminModal.vue'
-import ImageUpload from '../../components/admin/ImageUpload.vue'
+import IconPicker from '../../components/admin/IconPicker.vue'
 import { errorText } from '../../http'
 
 const ui = useUiStore()
@@ -119,7 +119,7 @@ async function move(i: number, d: number) {
         <div class="flex items-center gap-3">
           <img v-if="editing.icon" :src="editing.icon" alt="图标预览" class="h-12 w-12 shrink-0 rounded-lg object-contain" />
           <span v-else class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-lg font-bold text-white" :style="{ background: editing.color }">{{ editing.glyph }}</span>
-          <ImageUpload v-model="editing.icon" raw class="flex-1" label="上传图标" hint="建议正方形透明 PNG，≤ 3MB" />
+          <IconPicker v-model="editing.icon" class="flex-1" />
         </div>
       </div>
       <div v-if="!editing.icon" class="grid grid-cols-2 gap-4">

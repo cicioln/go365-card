@@ -4,7 +4,7 @@ import type { SeoPageKey, SiteConfig } from '../../data/mock'
 import { SEO_PAGES, resolveMeta } from '../../utils/seo'
 import { adminApi } from '../../adminApi'
 import { DEFAULT_LOGO, useSiteStore } from '../../stores/site'
-import ImageUpload from '../../components/admin/ImageUpload.vue'
+import IconPicker from '../../components/admin/IconPicker.vue'
 import { useUiStore } from '../../stores/ui'
 import { errorText } from '../../http'
 
@@ -12,7 +12,7 @@ const siteStore = useSiteStore()
 const ui = useUiStore()
 
 const site = ref<SiteConfig>({ ...siteStore.site })
-// ImageUpload 移除图片时给 undefined，这里统一转成空串
+// IconPicker 移除图片时给 undefined，这里统一转成空串
 const logo = computed({ get: () => site.value.logo || undefined, set: (v) => (site.value.logo = v ?? '') })
 const favicon = computed({ get: () => site.value.favicon || undefined, set: (v) => (site.value.favicon = v ?? '') })
 const siteError = ref('')
@@ -79,7 +79,7 @@ async function changePwd() {
           <div class="mb-2 flex h-16 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800">
             <img :src="site.logo || DEFAULT_LOGO" alt="Logo 预览" class="h-10 w-10 rounded-md object-contain" :class="{ 'dark:invert': !site.logo }" />
           </div>
-          <ImageUpload v-model="logo" raw label="上传 Logo" hint="建议正方形透明 PNG，≤ 3MB" />
+          <IconPicker v-model="logo" label="选择 Logo" />
           <p class="mt-1.5 text-xs text-zinc-400">显示在页头、页脚和后台，留空使用默认 Logo</p>
         </div>
         <div>
@@ -87,7 +87,7 @@ async function changePwd() {
           <div class="mb-2 flex h-16 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800">
             <img :src="site.favicon || site.logo || DEFAULT_LOGO" alt="图标预览" class="h-8 w-8 rounded object-contain" :class="{ 'dark:invert': !site.favicon && !site.logo }" />
           </div>
-          <ImageUpload v-model="favicon" raw label="上传图标" hint="建议 64×64 正方形 PNG" />
+          <IconPicker v-model="favicon" label="选择图标" />
           <p class="mt-1.5 text-xs text-zinc-400">留空则使用网站 Logo</p>
         </div>
       </div>

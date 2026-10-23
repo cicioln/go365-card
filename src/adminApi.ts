@@ -1,6 +1,6 @@
 // 后台接口（需要管理员会话）
 import type { Category, PaymentChannel, Post, Product, SiteConfig } from './data/mock'
-import type { AccessLogResult, AdminProduct, AdminStats, AdminUser, Order, OrderStatus } from './types'
+import type { AccessLogResult, LibraryIcon, AdminProduct, AdminStats, AdminUser, Order, OrderStatus } from './types'
 import { del, get, patch, post, put } from './http'
 
 const A = '/api/admin'
@@ -83,6 +83,11 @@ export const adminApi = {
 
   users: () => get<AdminUser[]>(`${A}/users`),
   deleteUser: (id: number) => del(`${A}/users/${id}`),
+
+  icons: () => get<LibraryIcon[]>(`${A}/icons`),
+  addIcon: (url: string, name: string) => post<LibraryIcon>(`${A}/icons`, { url, name }),
+  renameIcon: (id: number, name: string) => patch(`${A}/icons/${id}`, { name }),
+  deleteIcon: (id: number) => del(`${A}/icons/${id}`),
 
   logs: (p: { ip: string; keyword: string; kind: string; hours: number; page: number }) =>
     get<AccessLogResult>(`${A}/logs?ip=${enc(p.ip)}&keyword=${enc(p.keyword)}&kind=${p.kind}&hours=${p.hours}&page=${p.page}`),
