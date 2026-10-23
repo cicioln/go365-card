@@ -43,7 +43,7 @@ async function toggleRecommended(p: Product, value: boolean) {
 }
 
 async function remove(p: Product) {
-  if (!confirm(`确定删除商品「${p.title}」？未售出的卡密会一并删除，历史订单不受影响。`)) return
+  if (!confirm(`确定删除商品「${p.title}」？未售出的卡密会移入卡密回收站，历史订单不受影响。`)) return
   try {
     await adminApi.deleteProduct(p.id)
     ui.notify('已删除')

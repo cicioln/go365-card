@@ -7,6 +7,15 @@ const A = '/api/admin'
 const enc = encodeURIComponent
 
 export type AdminCategory = Category & { productCount: number }
+/** 回收站里的卡密 */
+export interface TrashCard {
+  id: number
+  productId: number
+  productTitle: string
+  code: string
+  deletedAt: string
+}
+
 export type ProductInput = Omit<AdminProduct, 'id' | 'reserved' | 'soldCards'>
 
 export interface PaymentSettings {
@@ -42,6 +51,8 @@ export const adminApi = {
   updateProduct: (id: number, p: ProductInput) => put<AdminProduct>(`${A}/products/${id}`, p),
   setRecommended: (id: number, recommended: boolean) => patch(`${A}/products/${id}/recommended`, { recommended }),
   deleteProduct: (id: number) => del(`${A}/products/${id}`),
+  cardTrash: (productId?: number) => get<TrashCard[]>(`${A}/card-trash${productId ? `?productId=${productId}` : ''}`),
+  purgeCards: (p: { ids?: number[]; productId?: number }) => post(`${A}/card-trash/purge`, p),
   upload: (file: Blob, name: string) => {
     const form = new FormData()
     form.append('file', file, name)

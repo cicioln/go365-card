@@ -174,14 +174,31 @@ function parseProduct(b: Record<string, unknown>) {
 
 type ParsedProduct = ReturnType<typeof parseProduct>
 
-/** 用提交的列表替换可售卡密；已锁定、已售出的卡密不受影响 */
+/** 把商品的可售卡密移入回收站；only 指定时只移这些 */
+function trashCards(productId: number, only?: string[]) {
+  const title = one<{ title: string }>('SELECT title FROM products WHERE id = ?', productId)?.title ?? `#${productId}`
+  const now = new Date().toISOString()
+  const rows = all<{ id: number; code: string }>("SELECT id, code FROM cards WHERE product_id = ? AND status = 'available' ORDER BY id", productId)
+  const pick = only ? new Set(only) : null
+  for (const r of rows) {
+    if (pick && !pick.has(r.code)) continue
+    run('INSERT INTO cards_trash (product_id, product_title, code, deleted_at) VALUES (?, ?, ?, ?)', productId, title, r.code, now)
+    run('DELETE FROM cards WHERE id = ?', r.id)
+  }
+}
+
+/** 用提交的列表替换可售卡密：保留仍在列表里的，移除的进回收站，新增的追加；已锁定、已售出的卡密不受影响 */
 function syncCards(productId: number, cards: string[]) {
   const locked = new Set(all<{ code: string }>("SELECT code FROM cards WHERE product_id = ? AND status != 'available'", productId).map((x) => x.code))
   const dup = cards.find((x) => locked.has(x))
   if (dup) fail(`卡密「${dup.slice(0, 30)}」已售出或被订单锁定，不能重复入库`)
-  run("DELETE FROM cards WHERE product_id = ? AND status = 'available'", productId)
+  const existing = all<{ code: string }>("SELECT code FROM cards WHERE product_id = ? AND status = 'available'", productId).map((x) => x.code)
+  const next = new Set(cards)
+  const removed = existing.filter((c) => !next.has(c))
+  if (removed.length) trashCards(productId, removed)
+  const have = new Set(existing)
   const now = new Date().toISOString()
-  for (const code of cards) run('INSERT INTO cards (product_id, code, created_at) VALUES (?, ?, ?)', productId, code, now)
+  for (const code of cards) if (!have.has(code)) run('INSERT INTO cards (product_id, code, created_at) VALUES (?, ?, ?)', productId, code, now)
 }
 
 function saveProduct(id: number | null, p: ParsedProduct) {
@@ -224,8 +241,33 @@ admin.patch('/products/:id/recommended', async (c) => {
 admin.delete('/products/:id', (c) => {
   const id = Number(c.req.param('id'))
   if (one("SELECT 1 FROM cards WHERE product_id = ? AND status = 'reserved' LIMIT 1", id)) fail('该商品有未支付的订单，请等订单关闭后再删除')
-  // 订单行保存了标题与价格快照，删除商品不影响历史订单
-  run('DELETE FROM products WHERE id = ?', id)
+  // 订单行保存了标题与价格快照，删除商品不影响历史订单；未售出的卡密先移入回收站
+  tx(() => {
+    trashCards(id)
+    run('DELETE FROM products WHERE id = ?', id)
+  })
+  return c.json({ ok: true })
+})
+
+// ---- 卡密回收站 ----
+
+admin.get('/card-trash', (c) => {
+  const pid = Number(c.req.query('productId')) || 0
+  const rows = all<{ id: number; product_id: number; product_title: string; code: string; deleted_at: string }>(
+    `SELECT * FROM cards_trash ${pid ? 'WHERE product_id = ?' : ''} ORDER BY id DESC LIMIT 20000`, ...(pid ? [pid] : []))
+  return c.json(rows.map((r) => ({ id: r.id, productId: r.product_id, productTitle: r.product_title, code: r.code, deletedAt: r.deleted_at })))
+})
+
+/** 从回收站彻底删除（ids 为空表示清空，productId 限定商品） */
+admin.post('/card-trash/purge', async (c) => {
+  const b = await body(c)
+  const ids = Array.isArray(b.ids) ? b.ids.map((x) => num(x, 'ID', 1, 1e12, true)) : []
+  const pid = Number(b.productId) || 0
+  tx(() => {
+    if (ids.length) for (const id of ids) run('DELETE FROM cards_trash WHERE id = ?', id)
+    else if (pid) run('DELETE FROM cards_trash WHERE product_id = ?', pid)
+    else run('DELETE FROM cards_trash')
+  })
   return c.json({ ok: true })
 })
 

@@ -98,6 +98,13 @@ addColumn('orders', 'pay_chain', "TEXT NOT NULL DEFAULT ''")
 addColumn('orders', 'pay_address', "TEXT NOT NULL DEFAULT ''")
 addColumn('orders', 'pay_units', 'INTEGER NOT NULL DEFAULT 0')
 db.exec('CREATE INDEX IF NOT EXISTS orders_usdt ON orders(pay_chain, pay_address, pay_units)')
+// 卡密回收站：后台保存时被移除、或随商品一起删除的可售卡密先放这里，可恢复、导出（不设外键，商品删除后仍保留）
+db.exec(`CREATE TABLE IF NOT EXISTS cards_trash (
+  id INTEGER PRIMARY KEY,
+  product_id INTEGER NOT NULL, product_title TEXT NOT NULL,
+  code TEXT NOT NULL, deleted_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS cards_trash_product ON cards_trash(product_id)`)
 
 type Param = null | number | bigint | string | Uint8Array
 const cache = new Map<string, StatementSync>()
