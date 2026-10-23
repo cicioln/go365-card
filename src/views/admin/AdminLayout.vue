@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  LayoutDashboard, Package, FolderTree, Receipt, FileText, CreditCard, Users, Settings,
+  LayoutDashboard, Package, FolderTree, Receipt, FileText, CreditCard, Users, Settings, ScrollText,
   LogOut, Menu, X, Sun, Moon, ExternalLink, AlertTriangle,
 } from 'lucide-vue-next'
 import { useAdminStore } from '../../stores/admin'
@@ -26,6 +26,7 @@ const menu = [
   { to: '/admin/posts', label: '文章管理', icon: FileText },
   { to: '/admin/payments', label: '支付渠道', icon: CreditCard },
   { to: '/admin/users', label: '用户管理', icon: Users },
+  { to: '/admin/logs', label: '访问日志', icon: ScrollText },
   { to: '/admin/settings', label: '系统设置', icon: Settings },
 ]
 

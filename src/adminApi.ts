@@ -1,6 +1,6 @@
 // 后台接口（需要管理员会话）
 import type { Category, PaymentChannel, Post, Product, SiteConfig } from './data/mock'
-import type { AdminProduct, AdminStats, AdminUser, Order, OrderStatus } from './types'
+import type { AccessLogResult, AdminProduct, AdminStats, AdminUser, Order, OrderStatus } from './types'
 import { del, get, patch, post, put } from './http'
 
 const A = '/api/admin'
@@ -83,6 +83,10 @@ export const adminApi = {
 
   users: () => get<AdminUser[]>(`${A}/users`),
   deleteUser: (id: number) => del(`${A}/users/${id}`),
+
+  logs: (p: { ip: string; keyword: string; kind: string; hours: number; page: number }) =>
+    get<AccessLogResult>(`${A}/logs?ip=${enc(p.ip)}&keyword=${enc(p.keyword)}&kind=${p.kind}&hours=${p.hours}&page=${p.page}`),
+  clearLogs: () => del(`${A}/logs`),
 
   site: () => get<SiteConfig>(`${A}/site`),
   saveSite: (s: SiteConfig) => put<SiteConfig>(`${A}/site`, s),

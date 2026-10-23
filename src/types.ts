@@ -57,6 +57,29 @@ export interface AdminStats {
   recent: Order[]
 }
 
+/** 访问日志 */
+export interface AccessLog {
+  id: number
+  at: string
+  ip: string
+  method: string
+  path: string
+  /** page 页面访问 / api 前台接口 / admin 后台接口 */
+  kind: 'page' | 'api' | 'admin'
+  status: number
+  ms: number
+  ua: string
+  referer: string
+}
+export interface AccessLogResult {
+  list: AccessLog[]
+  total: number
+  pageSize: number
+  uniqueIps: number
+  pageViews: number
+  topIps: { ip: string; n: number; last: string }[]
+}
+
 export interface AdminUser {
   id: number
   email: string

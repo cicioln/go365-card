@@ -8,6 +8,7 @@ import {
   all, getSetting, getSite, listCategories, listChannels, listPosts, one, run, setSetting, setSite, toProduct, tx, PRODUCT_SQL, type ProductRow,
 } from '../db.ts'
 import { closeOrder, deleteOrder, deliverLine, findOrder, markPaid, toOrder, type OrderRow } from '../orders.ts'
+import { flushLogs } from '../logs.ts'
 import { cleanHtml } from '../sanitize.ts'
 import { epayReady, mergePay, MOCK_ALLOWED, payConfig, payLocks, publicUrl, requestOrigin, type PayConfig } from '../settings.ts'
 import { checkSetupCode, clearSetupCode, createAdmin, needsSetup } from '../setup.ts'
@@ -507,4 +508,39 @@ admin.put('/site', async (c) => {
   }
   setSite(site)
   return c.json(site)
+})
+
+// ---- 访问日志 ----
+
+admin.get('/logs', (c) => {
+  flushLogs()
+  const q = c.req.query()
+  const ip = (q.ip ?? '').trim().slice(0, 64)
+  const kw = (q.keyword ?? '').trim().slice(0, 100)
+  const kind = ['page', 'api', 'admin'].includes(q.kind ?? '') ? q.kind! : ''
+  const hours = Math.min(Math.max(Number(q.hours) || 24, 1), 24 * 90)
+  const page = Math.max(Math.floor(Number(q.page) || 1), 1)
+  const since = Date.now() - hours * 3600_000
+  const where = `at >= ? AND (? = '' OR ip = ?) AND (? = '' OR kind = ?) AND (? = '' OR path LIKE ? OR ua LIKE ?)`
+  const args = [since, ip, ip, kind, kind, kw, `%${kw}%`, `%${kw}%`] as const
+  const PAGE = 50
+  const list = all<{ id: number; at: number; ip: string; method: string; path: string; kind: string; status: number; ms: number; ua: string; referer: string }>(
+    `SELECT * FROM access_logs WHERE ${where} ORDER BY at DESC, id DESC LIMIT ${PAGE} OFFSET ?`, ...args, (page - 1) * PAGE)
+  const total = one<{ n: number }>(`SELECT COUNT(*) n FROM access_logs WHERE ${where}`, ...args)!.n
+  // 同一时间范围内访问最多的 IP（不受 IP、关键词筛选影响，方便发现异常来源）
+  const topIps = all<{ ip: string; n: number; last: number }>(
+    `SELECT ip, COUNT(*) n, MAX(at) last FROM access_logs WHERE at >= ? AND (? = '' OR kind = ?) GROUP BY ip ORDER BY n DESC LIMIT 20`, since, kind, kind)
+  const uniqueIps = one<{ n: number }>('SELECT COUNT(DISTINCT ip) n FROM access_logs WHERE at >= ?', since)!.n
+  const pageViews = one<{ n: number }>("SELECT COUNT(*) n FROM access_logs WHERE at >= ? AND kind = 'page'", since)!.n
+  return c.json({
+    list: list.map((r) => ({ ...r, at: new Date(r.at).toISOString() })),
+    total, pageSize: PAGE, uniqueIps, pageViews,
+    topIps: topIps.map((r) => ({ ...r, last: new Date(r.last).toISOString() })),
+  })
+})
+
+admin.delete('/logs', (c) => {
+  flushLogs()
+  run('DELETE FROM access_logs')
+  return c.json({ ok: true })
 })

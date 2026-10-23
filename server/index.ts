@@ -13,6 +13,7 @@ import { db, findPost, getSite, one } from './db.ts'
 import { plainText, resolveMeta, type DetailMeta } from '../src/utils/seo.ts'
 import { pruneBuckets, pruneSessions } from './security.ts'
 import { epayReady, payConfig } from './settings.ts'
+import { accessLog, flushLogs, pruneLogs } from './logs.ts'
 import { pollUsdt } from './usdt.ts'
 import { initSetup } from './setup.ts'
 import { pub } from './routes/public.ts'
@@ -20,6 +21,8 @@ import { pay } from './routes/pay.ts'
 import { admin } from './routes/admin.ts'
 
 const app = new Hono()
+
+app.use('*', accessLog)
 
 app.use('*', secureHeaders({
   contentSecurityPolicy: {
@@ -154,6 +157,7 @@ setInterval(() => {
     pruneSessions()
     pruneBuckets()
     pruneCaptcha()
+    pruneLogs()
   } catch (e) {
     console.error('[cron]', e)
   }
@@ -168,6 +172,7 @@ for (const sig of ['SIGTERM', 'SIGINT'] as const)
   process.on(sig, () => {
     console.log(`[server] 收到 ${sig}，正在退出`)
     try {
+      flushLogs()
       db.close()
     } catch {
       /* 已关闭 */
