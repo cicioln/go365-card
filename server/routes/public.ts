@@ -5,7 +5,7 @@ import { all, findPost, getSite, listCategories, listChannels, listPosts, one, r
 import { createOrder, findOrder, toOrder, type OrderRow } from '../orders.ts'
 import { payUrl } from '../pay.ts'
 import { channelPayable, publicUrl } from '../settings.ts'
-import { endSession, rateLimit, sessionOf, startSession } from '../security.ts'
+import { clientIp, endSession, rateLimit, sessionOf, startSession } from '../security.ts'
 import { body, email, fail, num, password, str } from '../validate.ts'
 
 export const pub = new Hono()
@@ -151,12 +151,12 @@ pub.get('/orders/:no', rateLimit('order-view', 120, 60), (c) => {
 })
 
 /** 发起支付，返回跳转地址 */
-pub.post('/orders/:no/pay', rateLimit('pay', 30, 600), (c) => {
+pub.post('/orders/:no/pay', rateLimit('pay', 30, 600), async (c) => {
   const o = findOrder(c.req.param('no'))
   if (!o || !canView(c, o)) fail('订单不存在或无权查看', 404)
   if (o.status !== 'pending') fail(o.status === 'closed' ? '订单已超时关闭，请重新下单' : '订单已支付')
   if (o.expires_at < Date.now()) fail('订单已超时关闭，请重新下单')
-  return c.json({ url: payUrl(o, publicUrl(c)) })
+  return c.json({ url: await payUrl(o, publicUrl(c), clientIp(c)) })
 })
 
 /** 游客查单：订单号或邮箱 + 查单密码 */

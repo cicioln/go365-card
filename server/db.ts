@@ -97,6 +97,8 @@ addColumn('channels', 'rate', 'REAL NOT NULL DEFAULT 1')
 addColumn('orders', 'pay_chain', "TEXT NOT NULL DEFAULT ''")
 addColumn('orders', 'pay_address', "TEXT NOT NULL DEFAULT ''")
 addColumn('orders', 'pay_units', 'INTEGER NOT NULL DEFAULT 0')
+// 易支付 mapi 下单拿到的支付链接，重复点击支付时复用（网关不允许同一订单号重复下单）
+addColumn('orders', 'pay_link', "TEXT NOT NULL DEFAULT ''")
 // 分类图标：上传的图片地址，空则用字符 + 颜色
 addColumn('categories', 'icon', "TEXT NOT NULL DEFAULT ''")
 db.exec('CREATE INDEX IF NOT EXISTS orders_usdt ON orders(pay_chain, pay_address, pay_units)')

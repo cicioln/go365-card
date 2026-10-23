@@ -11,7 +11,7 @@ export interface OrderRow {
   order_no: string; email: string; user_id: number | null; query_hash: string
   amount: number; fee: number; channel_id: number | null; channel_name: string; channel_type: string
   status: OrderStatus; trade_no: string | null; created_at: string; paid_at: string | null; expires_at: number
-  pay_chain: Chain | ''; pay_address: string; pay_units: number
+  pay_chain: Chain | ''; pay_address: string; pay_units: number; pay_link: string
 }
 
 interface LineRow {

@@ -1,4 +1,5 @@
 import { md5, orderToken, safeEqual } from './crypto.ts'
+import { run } from './db.ts'
 import type { OrderRow } from './orders.ts'
 import { payConfig } from './settings.ts'
 import { fail } from './validate.ts'
@@ -21,14 +22,26 @@ export function epaySign(params: Record<string, string>, key: string) {
   return md5(str + key)
 }
 
-/** 生成跳转支付的地址；baseUrl 为本站对外地址，用于回调与跳回 */
-export function payUrl(o: OrderRow, baseUrl: string) {
+/** 从 mapi 返回中取支付链接：兼容彩虹易支付（code=1, payurl/qrcode）与星业等（status=1, pay_url/h5_url） */
+function mapiLink(r: Record<string, unknown>) {
+  const ok = String(r.code ?? r.status) === '1'
+  const link = [r.payurl, r.pay_url, r.h5_url, r.qrcode, r.urlscheme].find((v) => typeof v === 'string' && v)
+  return ok && typeof link === 'string' && /^(https?|alipays?|weixin):/i.test(link) ? link : null
+}
+
+/**
+ * 生成跳转支付的地址；baseUrl 为本站对外地址，用于回调与跳回，clientIp 为付款人 IP。
+ * 易支付走服务端 mapi.php 接口下单拿支付链接（部分网关的 submit.php 只返回 JSON，不会跳转）。
+ */
+export async function payUrl(o: OrderRow, baseUrl: string, clientIp: string) {
   const pay = payConfig()
   const token = orderToken(o.order_no)
   // 内置 USDT 订单在订单页扫码转账，不跳转网关
   if (o.pay_chain) fail('请按订单页显示的地址和金额转账')
   if (pay.provider === 'mock') return `/api/pay/mock/${o.order_no}?t=${token}`
   if (!pay.epayUrl || !pay.epayPid || !pay.epayKey) fail('支付暂不可用，请联系客服', 503)
+  // 网关不允许同一订单号重复下单，已下过单的直接复用链接
+  if (o.pay_link) return o.pay_link
   const params: Record<string, string> = {
     pid: pay.epayPid,
     type: EPAY_TYPE[o.channel_type] ?? 'alipay',
@@ -37,10 +50,27 @@ export function payUrl(o: OrderRow, baseUrl: string) {
     return_url: `${baseUrl}/orders/${o.order_no}?t=${token}`,
     name: `订单 ${o.order_no}`,
     money: o.amount.toFixed(2),
+    clientip: clientIp === 'unknown' ? '127.0.0.1' : clientIp,
   }
   params.sign = epaySign(params, pay.epayKey)
   params.sign_type = 'MD5'
-  return `${pay.epayUrl}/submit.php?${new URLSearchParams(params)}`
+  let r: Record<string, unknown>
+  try {
+    const res = await fetch(`${pay.epayUrl}/mapi.php`, {
+      method: 'POST', body: new URLSearchParams(params), signal: AbortSignal.timeout(15_000),
+    })
+    r = JSON.parse(await res.text())
+  } catch (e) {
+    console.warn('[epay] 下单请求失败', o.order_no, e)
+    fail('支付网关连接失败，请稍后再试', 502)
+  }
+  const link = mapiLink(r)
+  if (!link) {
+    console.warn('[epay] 下单失败', o.order_no, r.msg)
+    fail(`支付下单失败：${typeof r.msg === 'string' && r.msg ? r.msg.slice(0, 60) : '网关未返回支付链接'}`, 502)
+  }
+  run('UPDATE orders SET pay_link = ? WHERE order_no = ?', link, o.order_no)
+  return link
 }
 
 /**
