@@ -17,13 +17,13 @@ watchEffect(async () => {
 <template>
   <div class="mx-auto max-w-4xl py-12">
     <h1 class="text-center text-4xl font-black">{{ t(`posts.${type}`) }}</h1>
-    <p v-if="!list" class="py-16 text-center text-zinc-500">{{ t('common.loading') }}</p>
-    <p v-else-if="!list.length" class="py-16 text-center text-zinc-500">{{ t('posts.empty') }}</p>
+    <p v-if="!list" class="py-16 text-center text-ink-3">{{ t('common.loading') }}</p>
+    <p v-else-if="!list.length" class="py-16 text-center text-ink-3">{{ t('posts.empty') }}</p>
     <div v-else class="mt-10 grid gap-5">
       <RouterLink v-for="p in list" :key="p.id" :to="`/posts/${p.slug}`" class="card block p-6 transition hover:shadow-md">
-        <time class="text-xs text-zinc-500">{{ p.publishedAt }}</time>
+        <time class="text-xs text-ink-3">{{ p.publishedAt }}</time>
         <h2 class="mt-1 text-xl font-bold">{{ p.title }}</h2>
-        <p v-if="p.summary" class="mt-2 text-sm text-zinc-500">{{ p.summary }}</p>
+        <p v-if="p.summary" class="mt-2 text-sm text-ink-3">{{ p.summary }}</p>
       </RouterLink>
     </div>
   </div>

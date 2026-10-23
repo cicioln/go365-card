@@ -38,18 +38,18 @@ async function copy(text: string) {
       <img v-if="qr" :src="qr" :alt="t('usdt.qrAlt')" class="h-48 w-48 shrink-0 rounded-xl bg-white p-2 ring-1 ring-black/5" />
       <dl class="grid w-full min-w-0 gap-3 text-sm">
         <div>
-          <dt class="text-zinc-500">{{ t('usdt.network') }}</dt>
+          <dt class="text-ink-3">{{ t('usdt.network') }}</dt>
           <dd class="font-bold">{{ usdt.network }}</dd>
         </div>
         <div>
-          <dt class="text-zinc-500">{{ t('usdt.amount') }}</dt>
+          <dt class="text-ink-3">{{ t('usdt.amount') }}</dt>
           <dd class="flex items-center gap-2">
             <span class="font-mono text-2xl font-bold text-price">{{ usdt.amount }}</span><span class="font-bold">USDT</span>
             <button class="text-brand" :aria-label="t('usdt.copyAmount')" @click="copy(usdt.amount)"><Copy class="h-4 w-4" /></button>
           </dd>
         </div>
         <div>
-          <dt class="text-zinc-500">{{ t('usdt.address') }}</dt>
+          <dt class="text-ink-3">{{ t('usdt.address') }}</dt>
           <dd class="flex items-start gap-2">
             <span class="min-w-0 font-mono break-all">{{ usdt.address }}</span>
             <button class="mt-0.5 shrink-0 text-brand" :aria-label="t('usdt.copyAddress')" @click="copy(usdt.address)"><Copy class="h-4 w-4" /></button>
@@ -57,12 +57,12 @@ async function copy(text: string) {
         </div>
       </dl>
     </div>
-    <ul class="mt-4 list-disc space-y-1 rounded-xl bg-amber-50 py-3 pr-3 pl-7 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+    <ul class="mt-4 list-disc space-y-1 rounded-xl bg-warn-soft py-3 pr-3 pl-7 text-xs text-warn">
       <li>{{ t('usdt.exact', { amount: usdt.amount }) }}</li>
       <li>{{ t('usdt.chainOnly', { network: usdt.network }) }}</li>
       <li>{{ t('usdt.deadline', { time: new Date(expiresAt).toLocaleTimeString() }) }}</li>
     </ul>
-    <p role="status" class="mt-3 flex items-center gap-2 text-sm text-zinc-500">
+    <p role="status" class="mt-3 flex items-center gap-2 text-sm text-ink-3">
       <RefreshCw class="h-4 w-4 shrink-0 animate-spin [animation-duration:3s]" />{{ t('usdt.waiting') }}
     </p>
   </div>

@@ -17,8 +17,8 @@ const cart = useCartStore()
 const auth = useAuthStore()
 
 const chIcon: Record<string, { icon: unknown; cls: string }> = {
-  alipay: { icon: Wallet, cls: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15' },
-  wechat: { icon: MessageCircle, cls: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15' },
+  alipay: { icon: Wallet, cls: 'bg-warn-soft text-warn' },
+  wechat: { icon: MessageCircle, cls: 'bg-ok-soft text-ok' },
   usdt: { icon: Coins, cls: 'bg-teal-50 text-teal-600 dark:bg-teal-500/15' },
 }
 
@@ -96,9 +96,9 @@ async function submit() {
 <template>
   <div class="mx-auto max-w-3xl py-10">
     <h1 class="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">{{ t('checkout.title') }}</h1>
-    <p v-if="loading" class="card py-16 text-center text-zinc-500">{{ t('common.loading') }}</p>
+    <p v-if="loading" class="card py-16 text-center text-ink-3">{{ t('common.loading') }}</p>
     <form v-else class="grid gap-6" novalidate @submit.prevent="submit">
-      <div class="card divide-y divide-black/5 dark:divide-white/10">
+      <div class="card divide-y divide-line">
         <div v-for="l in lines" :key="l.productId" class="flex justify-between gap-4 p-4 text-sm">
           <span class="font-medium">{{ l.title }} × {{ l.qty }}</span>
           <span class="shrink-0 font-bold">{{ money(l.unit * l.qty) }}</span>
@@ -121,8 +121,8 @@ async function submit() {
             <label
               v-for="c in channels"
               :key="c.id"
-              class="flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-sm transition has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-brand/20"
-              :class="channelId === c.id ? 'border-brand bg-brand-soft dark:bg-brand/20' : 'border-black/10 hover:border-brand/40 dark:border-white/10'"
+              class="flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-sm transition has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-zinc-500/20"
+              :class="channelId === c.id ? 'border-brand bg-brand-soft dark:bg-brand/20' : 'border-line-2 hover:border-brand/40'"
             >
               <input v-model="channelId" type="radio" name="channel" :value="c.id" class="sr-only" />
               <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" :class="chIcon[c.type]?.cls">
@@ -130,9 +130,9 @@ async function submit() {
               </span>
               <span class="min-w-0 flex-1">
                 <span class="block truncate font-semibold">{{ c.name }}</span>
-                <span v-if="c.feeRate" class="block text-xs text-zinc-500">{{ t('checkout.fee') }} {{ c.feeRate }}%</span>
+                <span v-if="c.feeRate" class="block text-xs text-ink-3">{{ t('checkout.fee') }} {{ c.feeRate }}%</span>
               </span>
-              <CircleCheck v-if="channelId === c.id" class="h-[18px] w-[18px] shrink-0 text-brand" />
+              <CircleCheck v-if="channelId === c.id" class="h-[18px] w-[18px] shrink-0 text-ink" />
             </label>
           </div>
         </fieldset>
@@ -141,7 +141,7 @@ async function submit() {
       <p v-if="error" role="alert" class="text-sm text-red-500">{{ error }}</p>
 
       <div class="card flex flex-wrap items-center justify-between gap-4 p-5">
-        <div class="text-sm text-zinc-500">
+        <div class="text-sm text-ink-3">
           <p>{{ t('checkout.fee') }}: {{ money(fee) }}</p>
           <p>{{ t('checkout.amount') }}: <b class="text-2xl text-price">{{ money(subtotal + fee) }}</b></p>
         </div>

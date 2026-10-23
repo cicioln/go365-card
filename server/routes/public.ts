@@ -44,6 +44,33 @@ pub.get('/products-by-ids', (c) => {
   return c.json(rows.map(toProduct))
 })
 
+/** 邮箱脱敏：只保留首字符和域名，a***@gmail.com */
+const maskEmail = (e: string) => {
+  const at = e.lastIndexOf('@')
+  return at > 0 ? `${e[0]}***${e.slice(at)}` : '***'
+}
+
+// 首页「实时发货」：最近已付款订单（邮箱脱敏）与成交统计，30 秒缓存
+let feedCache: { at: number; data: unknown } | null = null
+pub.get('/feed', rateLimit('feed', 120, 60), (c) => {
+  if (feedCache && Date.now() - feedCache.at < 30_000) return c.json(feedCache.data)
+  const rows = all<{ email: string; paid_at: string; title: string; qty: number; product_id: number; status: string }>(
+    `SELECT o.email, o.paid_at, o.status, l.title, l.qty, l.product_id FROM orders o
+     JOIN order_lines l ON l.id = (SELECT MIN(id) FROM order_lines WHERE order_no = o.order_no)
+     WHERE o.status IN ('paid', 'delivered') AND o.paid_at IS NOT NULL ORDER BY o.paid_at DESC LIMIT 5`,
+  )
+  const stats = one<{ sold: number; products: number }>('SELECT COALESCE(SUM(sold), 0) AS sold, COUNT(*) AS products FROM products')
+  const data = {
+    recent: rows.map((r) => ({
+      email: maskEmail(r.email), title: r.title, qty: r.qty, productId: r.product_id, at: r.paid_at, delivered: r.status === 'delivered',
+    })),
+    sold: stats?.sold ?? 0,
+    products: stats?.products ?? 0,
+  }
+  feedCache = { at: Date.now(), data }
+  return c.json(data)
+})
+
 pub.get('/posts', (c) => {
   const type = c.req.query('type')
   return c.json(listPosts().filter((p) => !type || p.type === type))

@@ -21,7 +21,14 @@ export const getProductsByIds = (ids: number[]) => get<Product[]>(`/api/products
 export const getProduct = (slug: string) =>
   get<Product>(`/api/products/${encodeURIComponent(slug)}`).catch((e) => (e.status === 404 ? null : Promise.reject(e)))
 
-export const getPosts = (type?: 'notice' | 'blog') => get<Post[]>(`/api/posts${qs({ type })}`)
+export interface Feed {
+  recent: { email: string; title: string; qty: number; productId: number; at: string; delivered: boolean }[]
+  sold: number
+  products: number
+}
+export const getFeed = () => get<Feed>('/api/feed')
+
+export const getPosts =(type?: 'notice' | 'blog') => get<Post[]>(`/api/posts${qs({ type })}`)
 export const getPost = (slug: string) =>
   get<Post>(`/api/posts/${encodeURIComponent(slug)}`).catch((e) => (e.status === 404 ? null : Promise.reject(e)))
 

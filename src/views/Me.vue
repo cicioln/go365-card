@@ -35,14 +35,14 @@ async function logout() {
       <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand dark:bg-brand/20"><UserRound class="h-7 w-7" /></span>
       <div class="min-w-0 flex-1">
         <h1 class="text-xl font-bold">{{ t('me.title') }}</h1>
-        <p class="truncate text-sm text-zinc-500">{{ auth.user }}</p>
+        <p class="truncate text-sm text-ink-3">{{ auth.user }}</p>
       </div>
       <button class="btn-ghost" @click="logout"><LogOut class="h-4 w-4" />{{ t('nav.logout') }}</button>
     </div>
     <h2 class="mb-3 mt-8 text-lg font-bold">{{ t('me.orders') }}</h2>
     <p v-if="error" role="alert" class="card p-8 text-center text-red-500">{{ error }}</p>
-    <p v-else-if="!mine" class="card p-8 text-center text-zinc-500">{{ t('common.loading') }}</p>
-    <p v-else-if="!mine.length" class="card p-8 text-center text-zinc-500">{{ t('me.none') }}</p>
+    <p v-else-if="!mine" class="card p-8 text-center text-ink-3">{{ t('common.loading') }}</p>
+    <p v-else-if="!mine.length" class="card p-8 text-center text-ink-3">{{ t('me.none') }}</p>
     <OrderList v-else :orders="mine" />
   </div>
 </template>

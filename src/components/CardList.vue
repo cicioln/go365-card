@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Check, Copy, Download, KeyRound } from 'lucide-vue-next'
+import { Check, Copy, Download } from 'lucide-vue-next'
 import type { Order } from '../types'
 import { useUiStore } from '../stores/ui'
 import { parseFields } from '../utils/cards'
@@ -51,61 +51,55 @@ function exportTxt() {
 
 <template>
   <section class="card mt-4 overflow-hidden" aria-labelledby="cards-title">
-    <header class="flex flex-wrap items-center gap-3 border-b border-black/5 bg-emerald-50/60 px-5 py-4 dark:border-white/10 dark:bg-emerald-500/10">
-      <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-500 text-white"><KeyRound class="h-4.5 w-4.5" /></span>
+    <header class="flex flex-wrap items-center gap-3 border-b border-line px-5 py-[18px] sm:px-[22px]">
       <div class="mr-auto min-w-0">
-        <h2 id="cards-title" class="font-bold">{{ t('order.cards') }} <span class="text-sm font-medium text-zinc-500">· {{ t('order.cardCount', { n: total }) }}</span></h2>
-        <p class="text-xs text-zinc-500">{{ t('order.saveHint') }}</p>
+        <h2 id="cards-title" class="text-base font-extrabold">{{ t('order.cards') }} · {{ t('order.cardCount', { n: total }) }}</h2>
+        <p class="text-[12.5px] text-ink-3">{{ multi ? t('order.saveHintShort') : groups[0]?.title }}</p>
       </div>
-      <div class="flex w-full gap-2 sm:w-auto">
-        <button class="btn-ghost flex-1 py-2 text-sm sm:flex-none" @click="copy(allText(false), 'all')">
+      <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+        <button class="btn-ghost h-[34px] rounded-[10px] px-3 text-[13px]" @click="copy(allText(false), 'all')">
           <component :is="copied === 'all' ? Check : Copy" class="h-4 w-4" />{{ t('order.copyAll') }}
         </button>
-        <button class="btn-primary flex-1 py-2 text-sm sm:flex-none" @click="exportTxt">
+        <button class="btn-ink h-[34px] rounded-[10px] px-3 text-[13px]" @click="exportTxt">
           <Download class="h-4 w-4" />{{ t('order.exportTxt') }}
         </button>
       </div>
     </header>
 
-    <div class="space-y-5 p-5">
-      <div v-for="g in groups" :key="g.id">
-        <h3 v-if="multi" class="mb-2 text-sm font-semibold text-zinc-600 dark:text-zinc-300">{{ g.title }}<span class="ml-1 text-zinc-400">({{ g.cards.length }})</span></h3>
-        <ol class="grid gap-2.5">
-          <li
-            v-for="(c, i) in g.cards"
-            :key="i"
-            class="rounded-xl border border-black/5 bg-zinc-50 dark:border-white/10 dark:bg-zinc-900"
+    <div v-for="g in groups" :key="g.id">
+      <h3 v-if="multi" class="border-b border-line bg-surface-2 px-5 py-2 text-[13px] font-bold text-ink-2 sm:px-[22px]">
+        {{ g.title }}<span class="ml-1 font-mono text-ink-3">({{ g.cards.length }})</span>
+      </h3>
+      <ol>
+        <li v-for="(c, i) in g.cards" :key="i" class="grid grid-cols-[1fr_auto] gap-x-3.5 gap-y-2 border-b border-line px-4 py-4 last:border-0 sm:grid-cols-[28px_1fr_auto] sm:px-[22px]">
+          <span class="font-mono text-xs font-bold text-ink-3 sm:pt-[9px]">{{ String(i + 1).padStart(2, '0') }}</span>
+          <button
+            class="btn-ghost h-[30px] rounded-[9px] px-2.5 text-xs sm:order-last sm:h-[34px] sm:self-start sm:px-3 sm:text-[13px]"
+            :aria-label="`${t('order.copyGroup')} #${i + 1}`"
+            @click="copy(c.raw, `${g.id}-${i}`)"
           >
-            <div class="flex items-center justify-between gap-2 border-b border-black/5 px-3.5 py-1.5 dark:border-white/10">
-              <span class="text-xs font-semibold text-zinc-400">#{{ i + 1 }}</span>
+            <Check v-if="copied === `${g.id}-${i}`" class="h-3.5 w-3.5 text-ok" />{{ t('order.copyGroup') }}
+          </button>
+
+          <!-- 「字段名: 值」格式：逐字段展示，每个值都能单独复制 -->
+          <dl v-if="c.fields" class="col-span-2 min-w-0 sm:col-span-1">
+            <div v-for="(f, j) in c.fields" :key="j" class="mb-1 grid grid-cols-[62px_1fr_28px] items-center gap-2.5 rounded-[10px] bg-surface-2 py-[7px] pr-1 pl-2.5 last:mb-0 sm:grid-cols-[90px_1fr_30px]">
+              <dt class="truncate text-xs text-ink-3" :title="f.key">{{ f.key }}</dt>
+              <dd class="max-h-24 min-w-0 overflow-y-auto font-mono text-[13px] font-medium break-all">{{ f.value }}</dd>
               <button
-                class="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-brand transition hover:bg-brand-soft dark:hover:bg-brand/15"
-                :aria-label="`${t('order.copy')} #${i + 1}`"
-                @click="copy(c.raw, `${g.id}-${i}`)"
+                class="grid h-[26px] w-[26px] place-items-center rounded-[7px] text-ink-3 transition hover:bg-surface hover:text-ink"
+                :aria-label="`${t('order.copy')} ${f.key}`"
+                :title="t('order.copy')"
+                @click="copy(f.value, `${g.id}-${i}-${j}`)"
               >
-                <component :is="copied === `${g.id}-${i}` ? Check : Copy" class="h-3.5 w-3.5" />{{ copied === `${g.id}-${i}` ? t('order.copied') : t('order.copy') }}
+                <component :is="copied === `${g.id}-${i}-${j}` ? Check : Copy" class="h-3.5 w-3.5" :class="{ 'text-ok': copied === `${g.id}-${i}-${j}` }" />
               </button>
             </div>
-
-            <!-- 「字段名: 值」格式：逐字段展示，每个值都能单独复制 -->
-            <dl v-if="c.fields" class="divide-y divide-black/5 dark:divide-white/10">
-              <div v-for="(f, j) in c.fields" :key="j" class="flex items-start gap-3 px-3.5 py-2 sm:grid sm:grid-cols-[8.5rem_1fr_auto]">
-                <dt class="w-24 shrink-0 pt-px text-xs text-zinc-500 sm:w-auto">{{ f.key }}</dt>
-                <dd class="max-h-24 min-w-0 flex-1 overflow-y-auto font-mono text-[13px] break-all">{{ f.value }}</dd>
-                <button
-                  class="btn-icon -my-1 h-7 w-7 shrink-0 text-zinc-400 hover:text-brand"
-                  :aria-label="`${t('order.copy')} ${f.key}`"
-                  @click="copy(f.value, `${g.id}-${i}-${j}`)"
-                >
-                  <component :is="copied === `${g.id}-${i}-${j}` ? Check : Copy" class="h-3.5 w-3.5" :class="{ 'text-emerald-500': copied === `${g.id}-${i}-${j}` }" />
-                </button>
-              </div>
-            </dl>
-            <!-- 其它格式原样显示，保留换行 -->
-            <pre v-else class="max-h-60 overflow-y-auto px-3.5 py-2.5 font-mono text-[13px] whitespace-pre-wrap break-all">{{ c.raw }}</pre>
-          </li>
-        </ol>
-      </div>
+          </dl>
+          <!-- 其它格式原样显示，保留换行 -->
+          <pre v-else class="col-span-2 max-h-60 min-w-0 overflow-y-auto rounded-[10px] bg-surface-2 px-2.5 py-2 font-mono text-[13px] whitespace-pre-wrap break-all sm:col-span-1">{{ c.raw }}</pre>
+        </li>
+      </ol>
     </div>
   </section>
 </template>

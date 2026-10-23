@@ -32,7 +32,7 @@ async function query() {
   <div class="mx-auto max-w-3xl py-12">
     <div class="text-center">
       <h1 class="text-3xl font-black">{{ t('guest.title') }}</h1>
-      <p class="mt-2 text-zinc-500">{{ t('guest.sub') }}</p>
+      <p class="mt-2 text-ink-3">{{ t('guest.sub') }}</p>
     </div>
     <form class="card mt-8 grid gap-4 p-6 sm:grid-cols-[1fr_1fr_auto] sm:items-end" @submit.prevent="query">
       <div>
@@ -47,7 +47,7 @@ async function query() {
     </form>
     <p v-if="error" role="alert" class="mt-4 text-center text-sm text-red-500">{{ error }}</p>
     <div v-if="result" class="mt-6">
-      <p v-if="!result.length" class="card p-8 text-center text-zinc-500">{{ t('guest.none') }}</p>
+      <p v-if="!result.length" class="card p-8 text-center text-ink-3">{{ t('guest.none') }}</p>
       <OrderList v-else :orders="result" />
     </div>
   </div>

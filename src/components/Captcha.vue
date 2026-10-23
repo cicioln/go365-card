@@ -30,6 +30,6 @@ defineExpose({ refresh })
 <template>
   <button type="button" class="h-[42px] w-[110px] shrink-0 overflow-hidden rounded-xl bg-[#eef2f7]" aria-label="验证码，点击刷新" @click="refresh">
     <img v-if="src" :src="src" alt="" class="h-full w-full" />
-    <span v-else class="text-xs text-zinc-500">点击加载</span>
+    <span v-else class="text-xs text-ink-3">点击加载</span>
   </button>
 </template>

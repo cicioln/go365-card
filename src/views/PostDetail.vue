@@ -23,10 +23,10 @@ watchEffect(async () => {
 
 <template>
   <article class="mx-auto max-w-3xl py-12">
-    <p v-if="loading" class="py-16 text-center text-zinc-500">{{ t('common.loading') }}</p>
-    <p v-else-if="!post" class="py-16 text-center text-zinc-500">{{ t('common.notFound') }}</p>
+    <p v-if="loading" class="py-16 text-center text-ink-3">{{ t('common.loading') }}</p>
+    <p v-else-if="!post" class="py-16 text-center text-ink-3">{{ t('common.notFound') }}</p>
     <div v-else class="card p-8">
-      <time class="text-xs text-zinc-500">{{ post.publishedAt }}</time>
+      <time class="text-xs text-ink-3">{{ post.publishedAt }}</time>
       <h1 class="mt-1 text-3xl font-bold">{{ post.title }}</h1>
       <div class="prose-content mt-6" v-html="post.content" />
     </div>

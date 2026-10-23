@@ -48,7 +48,7 @@ async function submit() {
   <div class="flex min-h-[70vh] items-center justify-center py-12">
     <form class="card w-full max-w-md p-8" @submit.prevent="submit">
       <h1 class="text-2xl font-bold">{{ isLogin ? t('auth.login') : t('auth.register') }}</h1>
-      <p class="mt-1 text-sm text-zinc-500">{{ isLogin ? t('auth.loginSub') : t('auth.registerSub') }}</p>
+      <p class="mt-1 text-sm text-ink-3">{{ isLogin ? t('auth.loginSub') : t('auth.registerSub') }}</p>
 
       <div class="mt-6 grid gap-4">
         <div>
@@ -85,13 +85,13 @@ async function submit() {
         {{ isLogin ? t('auth.login') : t('auth.register') }}
       </button>
 
-      <p class="mt-5 text-center text-sm text-zinc-500">
+      <p class="mt-5 text-center text-sm text-ink-3">
         {{ isLogin ? t('auth.noAccount') : t('auth.hasAccount') }}
         <RouterLink :to="isLogin ? '/auth/register' : '/auth/login'" class="font-semibold text-brand">
           {{ isLogin ? t('auth.toRegister') : t('auth.toLogin') }}
         </RouterLink>
       </p>
-      <RouterLink to="/" class="mt-3 flex items-center justify-center gap-1 text-sm text-zinc-500 hover:text-brand">
+      <RouterLink to="/" class="mt-3 flex items-center justify-center gap-1 text-sm text-ink-3 hover:text-brand">
         <ArrowLeft class="h-4 w-4" />{{ t('auth.backHome') }}
       </RouterLink>
     </form>

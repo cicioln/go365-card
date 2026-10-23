@@ -2,19 +2,30 @@ import { createI18n } from 'vue-i18n'
 import { load } from './stores/storage'
 
 const zh = {
-  nav: { home: '首页', products: '商品中心', blog: '博客', notice: '公告', about: '关于', cart: '购物车', guestOrders: '订单查询', login: '登录', me: '个人中心', logout: '退出' },
+  nav: { home: '首页', products: '商品中心', blog: '博客', notice: '公告', about: '关于', cart: '购物车', guestOrders: '订单查询', login: '登录', me: '个人中心', logout: '退出', searchPh: '搜索 GPT、Gemini、Claude…', tabProducts: '商品', tabOrders: '查单' },
   home: {
     notice: '网站公告', detail: '查看详情', selfQuery: '订单查询', noLogin: '无需登录', tg: 'TG 售后群', official: '官方售后',
     all: '全部', news: '最新动态', newsSub: '随时掌握我们的最新消息和公告', readMore: '阅读更多',
     heroSub: '数字商品自动发货，下单即用', hot: '热门商品', hotSub: '精选商品，库存实时更新', viewAll: '查看全部',
     perkAuto: '自动发货', perkAutoSub: '付款后秒发卡密', perk24: '7×24 小时', perk24Sub: '全天候自助下单',
     perkSafe: '安全支付', perkSafeSub: '多种支付方式', perkAfter: '售后无忧', perkAfterSub: '问题及时处理',
+    status: '自动发货 · 7×24 在线', title1: 'AI 会员与账号，', title2: '付款即到。', searchPh: '搜索商品，例如 GPT Plus',
+    statSold: '累计成交', statProducts: '在售商品', statAuto: '自助下单', live: '实时发货', hotNow: '热销榜', queryHint: '邮箱 + 密码找回', tgHint: '售后与上新通知',
+    view: '查看', sort: '排序', sort_default: '推荐', sort_sold: '销量', sort_price: '价格', sort_new: '最新',
+    step1: '选择商品', step1Sub: '无需注册，选好数量，多件自动享批发价。', step2: '填写邮箱与查单密码', step2Sub: '用于找回订单，请牢记查单密码。',
+    step3: '在线付款', step3Sub: '到账后自动确认，无需截图。', step4: '即时获取卡密', step4Sub: '一键复制或导出 TXT，订单页随时可查。',
+    faq1: '付款后多久能收到卡密？', faq1A: '自动发货商品付款确认后几秒内显示在订单页；人工发货商品由客服处理后显示。',
+    faq2: '订单页关掉了怎么找回？', faq2A: '点击「订单查询」，输入下单邮箱或订单号以及查单密码即可。',
+    faq3: '售后怎么处理？', faq3A: '请从下单到登录全程录屏，联系客服并提供订单号与录屏。',
+    tgTitle: '加入 Telegram 群，第一时间收到补货通知', tgSub: '售后、上新、优惠都在群里发布。', tgJoin: '加入群组',
   },
   product: {
-    auto: '自动交付', manual: '人工交付', recommend: '推荐', buy: '快速购买', stock: '库存', sold: '已售', soldOut: '售罄',
+    auto: '自动发货', manual: '人工发货', recommend: '热销', buy: '快速购买', stock: '库存', sold: '已售', soldOut: '售罄',
     center: '商品中心', centerSub: '浏览我们的精选商品', search: '搜索', searchPh: '搜索商品名称', category: '分类', allProducts: '全部商品',
     empty: '暂无商品', qty: '购买数量', addCart: '加入购物车', buyNow: '立即购买', wholesale: '批发价', wholesaleRow: '满 {n} 件 {p}/件',
-    detail: '商品详情', added: '已加入购物车', back: '返回',
+    detail: '商品说明', added: '已加入购物车', back: '返回',
+    restock: '等待补货', only: '仅剩 {n} 件', delivery: '发货方式', autoShort: '自动', manualShort: '人工', tier: '{r} 件',
+    saved: '已省 {p}', assure1: '正规渠道', assure2: '秒级发货', assure3: '订单随时可查',
   },
   cart: { title: '购物车', empty: '购物车是空的', go: '去逛逛', total: '合计', checkout: '去结算', remove: '删除', unit: '单价' },
   checkout: {
@@ -27,6 +38,9 @@ const zh = {
     copyAll: '复制全部', exportTxt: '导出 TXT', cardCount: '共 {n} 条', copyFail: '复制失败，请手动选择文本复制',
     payHint: '请在 {time} 前完成支付，超时订单将自动关闭', closedHint: '订单已超时关闭，库存已释放。如已付款请联系客服。',
     saveHint: '请妥善保存。凭此页面链接或「订单查询」可再次查看。',
+    saveHintShort: '请妥善保存', copyGroup: '复制本组', info: '订单信息', paidAmount: '实付', support: '联系售后', continue: '继续购物',
+    headDelivered: '支付成功，卡密已发放', headPaid: '支付成功，等待发货', headClosed: '订单已关闭', headPending: '等待支付',
+    stepCreated: '下单', stepPaid: '付款', stepDelivered: '发货',
     waitManual: '已支付，订单中含人工发货商品，客服处理后会在此显示发货内容，页面会自动刷新。',
   },
   usdt: {
@@ -55,19 +69,30 @@ const zh = {
 type Messages = typeof zh
 
 const en: Messages = {
-  nav: { home: 'Home', products: 'Products', blog: 'Blog', notice: 'Notice', about: 'About', cart: 'Cart', guestOrders: 'Order Lookup', login: 'Login', me: 'Account', logout: 'Logout' },
+  nav: { home: 'Home', products: 'Products', blog: 'Blog', notice: 'Notice', about: 'About', cart: 'Cart', guestOrders: 'Order Lookup', login: 'Login', me: 'Account', logout: 'Logout', searchPh: 'Search GPT, Gemini, Claude…', tabProducts: 'Shop', tabOrders: 'Orders' },
   home: {
     notice: 'Announcement', detail: 'Details', selfQuery: 'Order Lookup', noLogin: 'No login', tg: 'TG Support', official: 'Official',
     all: 'All', news: 'Latest News', newsSub: 'Stay up to date with our news', readMore: 'Read more',
     heroSub: 'Digital goods with instant delivery', hot: 'Popular', hotSub: 'Hand-picked products, live stock', viewAll: 'View all',
     perkAuto: 'Instant delivery', perkAutoSub: 'Cards sent right after payment', perk24: '24/7', perk24Sub: 'Order any time',
     perkSafe: 'Secure payment', perkSafeSub: 'Multiple methods', perkAfter: 'After-sales', perkAfterSub: 'Fast support',
+    status: 'Instant delivery · 24/7', title1: 'AI plans & accounts,', title2: 'delivered on payment.', searchPh: 'Search, e.g. GPT Plus',
+    statSold: 'Sold', statProducts: 'Products', statAuto: 'Self-service', live: 'Live deliveries', hotNow: 'Best sellers', queryHint: 'Email + password', tgHint: 'Support & restocks',
+    view: 'View', sort: 'Sort', sort_default: 'Featured', sort_sold: 'Popular', sort_price: 'Price', sort_new: 'Newest',
+    step1: 'Pick a product', step1Sub: 'No sign-up needed. Bulk orders get wholesale prices.', step2: 'Email & lookup password', step2Sub: 'Used to find your order later.',
+    step3: 'Pay online', step3Sub: 'Confirmed automatically, no screenshots.', step4: 'Get your cards', step4Sub: 'Copy or export TXT, viewable any time.',
+    faq1: 'How fast are cards delivered?', faq1A: 'Auto items appear on the order page seconds after payment; manual items after support processes them.',
+    faq2: 'Closed the order page?', faq2A: 'Open Order Lookup and enter your email or order number with the lookup password.',
+    faq3: 'How does after-sales work?', faq3A: 'Record your screen from purchase to login and contact support with the order number.',
+    tgTitle: 'Join our Telegram group for restock alerts', tgSub: 'Support, new arrivals and deals are posted there.', tgJoin: 'Join group',
   },
   product: {
     auto: 'Auto', manual: 'Manual', recommend: 'Hot', buy: 'Buy', stock: 'Stock', sold: 'Sold', soldOut: 'Sold out',
     center: 'Products', centerSub: 'Browse our selection', search: 'Search', searchPh: 'Search products', category: 'Categories', allProducts: 'All products',
     empty: 'No products', qty: 'Quantity', addCart: 'Add to cart', buyNow: 'Buy now', wholesale: 'Wholesale', wholesaleRow: '{n}+ pcs {p} each',
     detail: 'Details', added: 'Added to cart', back: 'Back',
+    restock: 'Restocking', only: 'Only {n} left', delivery: 'Delivery', autoShort: 'Auto', manualShort: 'Manual', tier: '{r} pcs',
+    saved: 'saved {p}', assure1: 'Official channels', assure2: 'Instant delivery', assure3: 'Orders always viewable',
   },
   cart: { title: 'Cart', empty: 'Your cart is empty', go: 'Shop now', total: 'Total', checkout: 'Checkout', remove: 'Remove', unit: 'Unit' },
   checkout: {
@@ -80,6 +105,9 @@ const en: Messages = {
     copyAll: 'Copy all', exportTxt: 'Export TXT', cardCount: '{n} total', copyFail: 'Copy failed, please select the text manually',
     payHint: 'Please pay before {time}; unpaid orders close automatically', closedHint: 'This order timed out and was closed. Contact support if you already paid.',
     saveHint: 'Keep these safe. You can view them again via this page link or Order Lookup.',
+    saveHintShort: 'Keep these safe', copyGroup: 'Copy', info: 'Order info', paidAmount: 'Paid', support: 'Contact support', continue: 'Continue shopping',
+    headDelivered: 'Paid, cards delivered', headPaid: 'Paid, awaiting delivery', headClosed: 'Order closed', headPending: 'Awaiting payment',
+    stepCreated: 'Placed', stepPaid: 'Paid', stepDelivered: 'Delivered',
     waitManual: 'Paid. This order contains manually delivered items; delivery details will appear here once processed.',
   },
   usdt: {
